@@ -1,0 +1,19 @@
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Java / Maven
+backend/**/target/
+!backend/**/src/main/**/target/
+!backend/**/src/test/**/target/
+
+# Bases de datos H2 generadas localmente (no deben subirse)
+backend/**/data/
+*.mv.db
+*.trace.db
+
+# IDE
+.idea/
+*.iml
+.vscode/

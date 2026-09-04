@@ -1,0 +1,21 @@
+﻿<h2>Mis pedidos</h2>
+
+@if (roles().length > 0) {
+  <p>Roles del token: {{ roles().join(', ') }}</p>
+}
+
+@if (cargando()) {
+  <p>Cargando...</p>
+}
+
+@if (error()) {
+  <p style="color:red">{{ error() }}</p>
+}
+
+@if (!cargando() && !error()) {
+  <ul>
+    @for (p of pedidos(); track p.id) {
+      <li>Pedido #{{ p.id }} - {{ p.estado }}</li>
+    }
+  </ul>
+}
