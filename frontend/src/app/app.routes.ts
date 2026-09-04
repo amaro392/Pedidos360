@@ -1,8 +1,7 @@
-﻿import { Routes } from '@angular/router';
-import { MsalGuard } from '@azure/msal-angular';
-import { PedidosComponent } from './pedidos/pedidos';
+import { Routes } from '@angular/router';
+import { Catalogo } from './components/catalogo/catalogo';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'pedidos' },
-  { path: 'pedidos', component: PedidosComponent, canActivate: [MsalGuard] }
+  { path: 'catalogo', component: Catalogo },
+  { path: '', redirectTo: 'catalogo', pathMatch: 'full' }
 ];

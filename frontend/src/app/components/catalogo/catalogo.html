@@ -1,0 +1,28 @@
+<div class="catalogo-container">
+  <div class="catalogo-header">
+    <h1>🎮 Catálogo Gamer</h1>
+    <p class="subtitle">Los mejores periféricos y equipos para gamers</p>
+  </div>
+
+  <div *ngIf="cargando" class="loading">Cargando productos...</div>
+
+  <div *ngIf="!cargando && productos.length === 0" class="empty">
+    No hay productos disponibles.
+  </div>
+
+  <div class="grid" *ngIf="!cargando">
+    <div class="card" *ngFor="let p of productos">
+      <div class="card-image">
+        <img [src]="p.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" [alt]="p.nombre" />
+        <span class="card-badge">{{ p.categoria }}</span>
+      </div>
+      <div class="card-body">
+        <h3>{{ p.nombre }}</h3>
+        <p class="precio">${{ p.precio | number:'1.0-0' }}</p>
+        <p class="stock" [class.low]="p.stock < 5">
+          {{ p.stock > 0 ? p.stock + ' unidades disponibles' : 'Sin stock' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
