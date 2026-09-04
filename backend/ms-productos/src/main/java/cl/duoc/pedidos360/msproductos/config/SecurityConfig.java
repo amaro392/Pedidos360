@@ -1,4 +1,4 @@
-﻿package cl.duoc.pedidos360.msproductos.config;
+package cl.duoc.pedidos360.msproductos.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
