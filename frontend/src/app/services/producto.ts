@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ProductoDTO {
   id?: number;
@@ -15,7 +16,7 @@ export interface ProductoDTO {
   providedIn: 'root'
 })
 export class ProductoService {
-  private apiUrl = 'http://localhost:8082/api/productos';
+  private apiUrl = ${environment.apiBaseUrl}/productos;
 
   constructor(private http: HttpClient) {}
 
