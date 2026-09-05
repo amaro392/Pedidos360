@@ -4,7 +4,8 @@ import { environment } from '../environments/environment';
 
 export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>([
-    [`${environment.apiBaseUrl}/*`, environment.azure.protectedResourceScopes]
+    [`${environment.apiBaseUrl}/*`, environment.azure.protectedResourceScopes],
+    [`${environment.pedidosApiUrl}/*`, environment.azure.protectedResourceScopes]
   ]);
 
   return {

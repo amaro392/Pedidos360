@@ -9,5 +9,6 @@ export const environment = {
     protectedResourceScopes: ['api://9078dcc3-9503-4237-a463-d5a4a96cb61f/access_as_user']
   },
 
-  apiBaseUrl: 'http://localhost:8082/api'
+  apiBaseUrl: 'http://localhost:8082/api',
+  pedidosApiUrl: 'http://localhost:8081/api'
 };

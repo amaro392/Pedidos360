@@ -36,7 +36,7 @@ export class PedidosComponent implements OnInit {
   private cargarPedidos(): void {
     // El MsalInterceptor adjunta el JWT automaticamente porque esta URL
     // matchea el protectedResourceMap definido en msal-interceptor-config.ts
-    this.http.get<any[]>(`${environment.apiBaseUrl}/pedidos`).subscribe({
+    this.http.get<any[]>(`${environment.pedidosApiUrl}/pedidos`).subscribe({
       next: (data) => {
         this.pedidos.set(data);
         this.cargando.set(false);
