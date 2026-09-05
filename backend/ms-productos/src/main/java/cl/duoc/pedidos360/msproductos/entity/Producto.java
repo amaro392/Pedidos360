@@ -20,7 +20,7 @@ public class Producto {
     @Column(nullable = false)
     private String categoria;
 
-    @Column(length = 500)
+    @Column(length = 1000)
     private String imagen; // URL de la imagen
 
     public Long getId() { return id; }

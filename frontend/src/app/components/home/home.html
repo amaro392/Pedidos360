@@ -1,0 +1,27 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">🎮</span>
+      <h2>GamerStore</h2>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/catalogo" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">🛒</span> Ver Catálogo
+      </a>
+      <a routerLink="/pedidos" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">📦</span> Mis Pedidos
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p>{{ getUserName() }}</p>
+      <button class="logout-btn" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <h1>Bienvenido, {{ getUserName() }}</h1>
+    <p class="subtitle">Selecciona una opción del menú para comenzar.</p>
+  </main>
+</div>

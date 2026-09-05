@@ -1,50 +1,47 @@
-﻿import { Component, OnInit, signal } from '@angular/core';
+﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { MsalService } from '@azure/msal-angular';
-import { environment } from '../../environments/environment';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './pedidos.html'
+  imports: [CommonModule, RouterModule],
+  templateUrl: './pedidos.html',
+  styleUrl: './pedidos.css'
 })
-export class PedidosComponent implements OnInit {
-  pedidos = signal<any[]>([]);
-  roles = signal<string[]>([]);
-  cargando = signal(true);
-  error = signal<string | null>(null);
+export class Pedidos implements OnInit {
+  pedidos: any[] = [];
+  cargando = true;
+
+  private urlPedidos = 'http://localhost:8081/api/pedidos';
 
   constructor(
-    private http: HttpClient,
-    private msal: MsalService
+    private http: HttpClient, 
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.leerRolesDesdeToken();
     this.cargarPedidos();
   }
 
-  private leerRolesDesdeToken(): void {
-    const account = this.msal.instance.getActiveAccount()
-      ?? this.msal.instance.getAllAccounts()[0];
-    const claims = account?.idTokenClaims as { roles?: string[] } | undefined;
-    this.roles.set(claims?.roles ?? []);
-  }
-
-  private cargarPedidos(): void {
-    // El MsalInterceptor adjunta el JWT automaticamente porque esta URL
-    // matchea el protectedResourceMap definido en msal-interceptor-config.ts
-    this.http.get<any[]>(`${environment.pedidosApiUrl}/pedidos`).subscribe({
+  cargarPedidos(): void {
+    this.http.get<any[]>(this.urlPedidos).subscribe({
       next: (data) => {
-        this.pedidos.set(data);
-        this.cargando.set(false);
+        this.pedidos = data;
+        this.cargando = false;
+        this.cdr.detectChanges(); // Fuerza renderizado de la lista
       },
       error: (err) => {
-        this.error.set('No se pudo conectar con el backend (' + err.status + ')');
-        this.cargando.set(false);
+        console.error('Error al obtener pedidos:', err);
+        this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  irAHome(): void {
+    this.router.navigate(['/home']);
   }
 }

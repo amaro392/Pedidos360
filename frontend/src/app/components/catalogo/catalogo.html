@@ -1,28 +1,98 @@
-<div class="catalogo-container">
-  <div class="catalogo-header">
-    <h1>🎮 Catálogo Gamer</h1>
-    <p class="subtitle">Los mejores periféricos y equipos para gamers</p>
+<div style="padding: 2rem; max-width: 1200px; margin: 0 auto; color: #ffffff; font-family: system-ui, -apple-system, sans-serif;">
+  
+  <!-- Encabezado -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem;">
+    <button (click)="irAHome()" style="background: #334155; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
+      ⬅ Volver al Home
+    </button>
+    <h1 style="margin: 0; font-size: 1.8rem; color: #f8fafc;">🎮 Catálogo Gamer</h1>
+    <button (click)="toggleCarrito()" style="background: #2563eb; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      🛒 Carrito 
+      <span style="background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
+        {{ carritoService.totalItems() }}
+      </span>
+    </button>
   </div>
 
-  <div *ngIf="cargando" class="loading">Cargando productos...</div>
+  <!-- Fondo Oscuro para Modal -->
+  <div *ngIf="mostrarCarrito" (click)="toggleCarrito()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 998;"></div>
 
-  <div *ngIf="!cargando && productos.length === 0" class="empty">
-    No hay productos disponibles.
-  </div>
+  <!-- Sidebar Lateral Carrito -->
+  <div [style.right]="mostrarCarrito ? '0' : '-420px'" style="position: fixed; top: 0; width: 380px; height: 100vh; background: #0f172a; color: #fff; z-index: 999; box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; transition: right 0.3s ease;">
+    <div style="padding: 1.2rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 1.2rem;">🛒 Resumen del pedido</h2>
+      <button (click)="toggleCarrito()" style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">✕</button>
+    </div>
 
-  <div class="grid" *ngIf="!cargando">
-    <div class="card" *ngFor="let p of productos">
-      <div class="card-image">
-        <img [src]="p.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" [alt]="p.nombre" />
-        <span class="card-badge">{{ p.categoria }}</span>
+    <div style="flex-grow: 1; overflow-y: auto; padding: 1.2rem;">
+      <div *ngIf="itemsCarrito.length === 0" style="color: #94a3b8; text-align: center; margin-top: 2rem;">
+        El carrito está vacío.
       </div>
-      <div class="card-body">
-        <h3>{{ p.nombre }}</h3>
-        <p class="precio">${{ p.precio | number:'1.0-0' }}</p>
-        <p class="stock" [class.low]="p.stock < 5">
-          {{ p.stock > 0 ? p.stock + ' unidades disponibles' : 'Sin stock' }}
+
+      <div *ngFor="let item of itemsCarrito" style="display: flex; gap: 12px; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
+        <img [src]="item.producto.imagen" [alt]="item.producto.nombre" style="width: 65px; height: 65px; object-fit: contain; border-radius: 6px; background: #1e293b;"/>
+        <div style="flex-grow: 1;">
+          <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; color: #f8fafc;">{{ item.producto.nombre }}</h4>
+          <p style="color: #38bdf8; font-weight: bold; margin: 0 0 8px 0;">${{ item.producto.precio | number:'1.0-0' }}</p>
+          
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button (click)="carritoService.decrementar(item.producto.id!)" style="background: #334155; color: #fff; border: none; width: 26px; height: 26px; border-radius: 4px; cursor: pointer;">-</button>
+            <span style="font-weight: bold;">{{ item.cantidad }}</span>
+            <button (click)="carritoService.agregar(item.producto)" [disabled]="getStockDisponible(item.producto) <= 0" style="background: #334155; color: #fff; border: none; width: 26px; height: 26px; border-radius: 4px; cursor: pointer;">+</button>
+            <button (click)="carritoService.eliminar(item.producto.id!)" style="background: transparent; color: #ef4444; border: none; font-size: 0.8rem; cursor: pointer; margin-left: 10px; text-decoration: underline;">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="itemsCarrito.length > 0" style="padding: 1.2rem; border-top: 1px solid #334155; background: #020617;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: #cbd5e1;">
+        <span>Productos ({{ carritoService.totalItems() }})</span>
+        <span>${{ carritoService.totalPrecio() | number:'1.0-0' }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 1.2rem; margin-top: 0.8rem; margin-bottom: 1rem; color: #fff;">
+        <strong>Total</strong>
+        <strong>${{ carritoService.totalPrecio() | number:'1.0-0' }}</strong>
+      </div>
+
+      <button (click)="procederAlPago()" style="width: 100%; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; border: none; padding: 1rem; border-radius: 8px; font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">
+        PROCEDER AL PAGO
+      </button>
+    </div>
+  </div>
+
+  <!-- Carga / Grid de Productos -->
+  <div *ngIf="cargando" style="text-align: center; color: #94a3b8; font-size: 1.2rem; margin-top: 3rem;">
+    Cargando catálogo...
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem;" *ngIf="!cargando && productos.length > 0">
+    <div *ngFor="let p of productos" style="background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; display: flex; flex-direction: column;">
+      
+      <div style="position: relative; height: 180px; width: 100%; background: #ffffff; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
+        <img [src]="p.imagen" [alt]="p.nombre" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        <span style="position: absolute; top: 8px; left: 8px; background: #ef4444; color: #fff; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">
+          {{ p.categoria || 'Gamer' }}
+        </span>
+      </div>
+
+      <div style="padding: 1rem; display: flex; flex-direction: column; flex-grow: 1;">
+        <h3 style="margin: 0 0 8px 0; font-size: 1.05rem; color: #f8fafc; line-height: 1.3; height: 2.6em; overflow: hidden;">{{ p.nombre }}</h3>
+        <p style="font-size: 1.3rem; font-weight: bold; color: #38bdf8; margin: 0.5rem 0;">${{ p.precio | number:'1.0-0' }}</p>
+        
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">
+          Stock disponible: {{ getStockDisponible(p) }}
         </p>
+        
+        <button 
+          (click)="carritoService.agregar(p)" 
+          [disabled]="getStockDisponible(p) <= 0"
+          style="margin-top: auto; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: #ffffff; border: none; padding: 0.8rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer;"
+        >
+          {{ getStockDisponible(p) > 0 ? '+ Agregar al carrito' : 'Agotado' }}
+        </button>
       </div>
     </div>
   </div>
+
 </div>

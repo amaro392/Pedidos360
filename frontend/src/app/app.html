@@ -1,9 +1,13 @@
 ﻿@if (!isLoggedIn()) {
-  <button (click)="login()">Iniciar sesion</button>
-}
-@if (isLoggedIn()) {
-  <p>Bienvenido, {{ getUserName() }}</p>
-  <button (click)="logout()">Cerrar sesion</button>
+  <div class="login-screen">
+    <div class="login-box">
+      <h1>🎮 GamerStore</h1>
+      <p>Inicia sesión para continuar</p>
+      <button (click)="login()">Iniciar sesión</button>
+    </div>
+  </div>
 }
 
-<router-outlet></router-outlet>
+@if (isLoggedIn()) {
+  <router-outlet></router-outlet>
+}

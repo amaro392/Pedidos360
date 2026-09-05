@@ -1,7 +1,8 @@
-﻿import { Component } from '@angular/core';
-import { MsalService } from '@azure/msal-angular';
+﻿import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -10,26 +11,49 @@ import { InteractionStatus } from '@azure/msal-browser';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class AppComponent {
-  constructor(private msal: MsalService) {}
+export class AppComponent implements OnInit {
+  title = 'frontend';
 
-  isLoggedIn(): boolean {
-    return this.msal.instance.getAllAccounts().length > 0;
+  constructor(
+    private authService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
+  ) {}
+
+  ngOnInit(): void {
+    // Procesa la redirección al volver del portal de Microsoft
+    this.authService.handleRedirectObservable().subscribe({
+      next: (result) => {
+        if (result) {
+          this.authService.instance.setActiveAccount(result.account);
+        }
+      },
+      error: (err) => console.error('Error en redirección MSAL:', err)
+    });
+
+    this.msalBroadcastService.msalSubject$
+      .pipe(filter((msg: any) => msg.interactionStatus === InteractionStatus.None))
+      .subscribe(() => {
+        this.checkAndSetActiveAccount();
+      });
   }
 
-  getUserName(): string {
-    const accounts = this.msal.instance.getAllAccounts();
-    return accounts.length > 0 ? accounts[0].name || accounts[0].username : '';
+  checkAndSetActiveAccount(): void {
+    const activeAccount = this.authService.instance.getActiveAccount();
+    if (!activeAccount && this.authService.instance.getAllAccounts().length > 0) {
+      this.authService.instance.setActiveAccount(this.authService.instance.getAllAccounts()[0]);
+    }
+  }
+
+  isLoggedIn(): boolean {
+    return this.authService.instance.getActiveAccount() !== null;
   }
 
   login(): void {
-    if (this.isLoggedIn()) {
-      return;
-    }
-    this.msal.loginRedirect();
+    // Forzado directo del flujo de login redirigido
+    this.authService.loginRedirect();
   }
 
   logout(): void {
-    this.msal.logoutRedirect();
+    this.authService.logoutRedirect();
   }
 }

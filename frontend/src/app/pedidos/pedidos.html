@@ -1,21 +1,41 @@
-﻿<h2>Mis pedidos</h2>
+﻿<div class="pedidos-container">
+  <div class="header-section">
+    <h1>📦 Mis Pedidos Confirmados</h1>
+    <a routerLink="/catalogo" class="btn-volver">← Volver al Catálogo</a>
+  </div>
 
-@if (roles().length > 0) {
-  <p>Roles del token: {{ roles().join(', ') }}</p>
-}
+  <div *ngIf="pedidos.length === 0" class="empty-state">
+    <p>No tienes pedidos registrados todavía.</p>
+  </div>
 
-@if (cargando()) {
-  <p>Cargando...</p>
-}
+  <div *ngFor="let pedido of pedidos" class="pedido-card">
+    <div class="card-header">
+      <div class="ticket-info">
+        <span class="ticket-id">Ticket #{{ pedido.id }}</span>
+        <span class="fecha">📅 {{ pedido.fechaCreacion | date:'dd/MM/yyyy - HH:mm' }}</span>
+      </div>
+      <span class="estado-badge">{{ pedido.estado }}</span>
+    </div>
 
-@if (error()) {
-  <p style="color:red">{{ error() }}</p>
-}
+    <div class="card-body">
+      <div *ngFor="let item of pedido.items" class="item-row">
+        <img [src]="item.imagenUrl || 'https://via.placeholder.com/80'" [alt]="item.nombreProducto" class="item-img" />
+        <div class="item-details">
+          <h4 class="item-title">{{ item.nombreProducto }}</h4>
+          <span class="item-qty">Cantidad: {{ item.cantidad }} × ${{ item.precioUnitario | number }}</span>
+        </div>
+        <div class="item-subtotal">
+          ${{ (item.cantidad * item.precioUnitario) | number }}
+        </div>
+      </div>
+    </div>
 
-@if (!cargando() && !error()) {
-  <ul>
-    @for (p of pedidos(); track p.id) {
-      <li>Pedido #{{ p.id }} - {{ p.estado }}</li>
-    }
-  </ul>
-}
+    <div class="card-footer">
+      <span class="cliente-email">✉️ {{ pedido.clienteEmail }}</span>
+      <div class="total-box">
+        <span class="total-label">Total Pagado</span>
+        <span class="total-amount">${{ pedido.total | number }}</span>
+      </div>
+    </div>
+  </div>
+</div>

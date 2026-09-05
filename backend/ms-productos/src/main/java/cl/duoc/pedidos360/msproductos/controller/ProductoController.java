@@ -8,7 +8,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
+@CrossOrigin(origins = "*") // Permite las peticiones desde el frontend de Angular
 public class ProductoController {
+
     @Autowired
     private ProductoService service;
 

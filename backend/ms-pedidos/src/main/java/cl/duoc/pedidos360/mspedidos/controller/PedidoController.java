@@ -4,14 +4,13 @@ import cl.duoc.pedidos360.mspedidos.entity.Pedido;
 import cl.duoc.pedidos360.mspedidos.repository.PedidoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/pedidos")
+@RequestMapping("/api/pedidos")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class PedidoController {
 
     private final PedidoRepository pedidoRepository;
@@ -21,7 +20,7 @@ public class PedidoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Pedido>> listar(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<Pedido>> listar() {
         return ResponseEntity.ok(pedidoRepository.findAll());
     }
 
