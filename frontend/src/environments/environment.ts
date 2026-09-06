@@ -10,5 +10,6 @@ export const environment = {
   },
 
   apiBaseUrl: 'http://localhost:8082/api',
-  pedidosApiUrl: 'http://localhost:8081/api'
+  pedidosApiUrl: 'http://localhost:8081/api',
+  notificacionesApiUrl: 'http://localhost:8083/api'
 };

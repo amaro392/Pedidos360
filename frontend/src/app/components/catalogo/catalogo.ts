@@ -18,6 +18,7 @@ export class Catalogo implements OnInit {
 
   private productosUrl = 'http://localhost:8082/api/productos';
   private pedidosUrl = 'http://localhost:8081/api/pedidos';
+  private notificacionesUrl = 'http://localhost:8083/api/notificaciones';
 
   constructor(
     public carritoService: CarritoService,
@@ -80,14 +81,31 @@ export class Catalogo implements OnInit {
       }))
     };
 
-    this.http.post(this.pedidosUrl, nuevoPedido).subscribe({
-      next: () => {
+    this.http.post<any>(this.pedidosUrl, nuevoPedido).subscribe({
+      next: (pedidoCreado) => {
+        this.notificarPedidoCreado(pedidoCreado, nuevoPedido.clienteEmail);
         alert('¡Pedido realizado con éxito!');
         this.carritoService.vaciar();
         this.mostrarCarrito = false;
         this.router.navigate(['/pedidos']);
       },
       error: (err) => console.error('Error al guardar pedido:', err)
+    });
+  }
+
+  // Deja constancia en ms-notificaciones. Si falla, no bloquea la compra:
+  // el pedido ya quedo guardado, esto es solo el aviso.
+  private notificarPedidoCreado(pedido: any, clienteEmail: string): void {
+    const notificacion = {
+      destinatarioEmail: clienteEmail,
+      asunto: 'Pedido recibido',
+      mensaje: `Tu pedido #${pedido?.id ?? ''} fue recibido y esta siendo procesado.`,
+      tipo: 'PEDIDO_CREADO',
+      pedidoId: pedido?.id
+    };
+
+    this.http.post(this.notificacionesUrl, notificacion).subscribe({
+      error: (err) => console.error('No se pudo registrar la notificacion:', err)
     });
   }
 }
