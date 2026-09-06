@@ -1,0 +1,99 @@
+.perfil-container {
+  padding: 3rem;
+  color: white;
+  max-width: 600px;
+}
+
+.perfil-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+}
+
+.subtitle {
+  color: #8892b0;
+  margin-bottom: 1.5rem;
+}
+
+.estado-carga {
+  color: #8892b0;
+  padding: 2rem 0;
+}
+
+.perfil-card {
+  background: #16213e;
+  border-radius: 14px;
+  padding: 2rem;
+  border: 1px solid #1f2b4d;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  color: #8892b0;
+  font-weight: 600;
+}
+
+.campo input {
+  background: #0d1b2a;
+  border: 1px solid #1f2b4d;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  color: white;
+  font-size: 1rem;
+}
+
+.campo input:focus {
+  outline: none;
+  border-color: #0fbcf9;
+}
+
+.campo input[readonly] {
+  color: #8892b0;
+  cursor: not-allowed;
+}
+
+.mensaje-exito {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+}
+
+.mensaje-error {
+  background: rgba(233, 69, 96, 0.15);
+  color: #e94560;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+}
+
+.btn-guardar {
+  width: 100%;
+  background: #0fbcf9;
+  color: #0d1b2a;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-guardar:not(:disabled):hover {
+  opacity: 0.9;
+}

@@ -1,0 +1,73 @@
+<div class="perfil-container">
+  <div class="perfil-header">
+    <h1>👤 Mi Perfil</h1>
+    <p class="subtitle" *ngIf="esNuevo && !cargando">
+      Aún no tienes datos de perfil guardados. Complétalos para agilizar tus próximos pedidos.
+    </p>
+  </div>
+
+  <div *ngIf="cargando" class="estado-carga">
+    Cargando perfil...
+  </div>
+
+  <div *ngIf="!cargando" class="perfil-card">
+    <form (ngSubmit)="guardar()" #perfilForm="ngForm">
+      <div class="campo">
+        <label for="nombre">Nombre completo</label>
+        <input
+          id="nombre"
+          name="nombre"
+          type="text"
+          [(ngModel)]="cliente.nombre"
+          required
+          placeholder="Tu nombre completo" />
+      </div>
+
+      <div class="campo">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          [(ngModel)]="cliente.email"
+          required
+          [readonly]="!esNuevo"
+          placeholder="tu@email.com" />
+      </div>
+
+      <div class="campo">
+        <label for="telefono">Teléfono</label>
+        <input
+          id="telefono"
+          name="telefono"
+          type="tel"
+          [(ngModel)]="cliente.telefono"
+          required
+          placeholder="+56 9 1234 5678" />
+      </div>
+
+      <div class="campo">
+        <label for="direccion">Dirección</label>
+        <input
+          id="direccion"
+          name="direccion"
+          type="text"
+          [(ngModel)]="cliente.direccion"
+          required
+          placeholder="Calle, número, comuna" />
+      </div>
+
+      <div class="mensaje-exito" *ngIf="mensajeExito">
+        {{ mensajeExito }}
+      </div>
+
+      <div class="mensaje-error" *ngIf="error">
+        Ocurrió un error al comunicarse con el servidor. Intenta nuevamente.
+      </div>
+
+      <button type="submit" class="btn-guardar" [disabled]="guardando || perfilForm.invalid">
+        {{ guardando ? 'Guardando...' : (esNuevo ? 'Crear perfil' : 'Guardar cambios') }}
+      </button>
+    </form>
+  </div>
+</div>
