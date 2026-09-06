@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { MsalService } from '@azure/msal-angular';
 import { CarritoService } from '../../services/carrito';
 
 @Component({
@@ -24,7 +25,8 @@ export class Catalogo implements OnInit {
     public carritoService: CarritoService,
     private http: HttpClient,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private msal: MsalService
   ) {}
 
   ngOnInit(): void {
@@ -36,7 +38,7 @@ export class Catalogo implements OnInit {
       next: (data) => {
         this.productos = data;
         this.cargando = false;
-        this.cdr.detectChanges(); // Forzar el renderizado inmediato en pantalla
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar productos:', err);
@@ -46,7 +48,6 @@ export class Catalogo implements OnInit {
     });
   }
 
-  // Obtiene el stock real restando la cantidad agregada al carrito
   getStockDisponible(producto: any): number {
     const itemEnCarrito = this.itemsCarrito.find((i: any) => i.producto.id === producto.id);
     const cantidadEnCarrito = itemEnCarrito ? itemEnCarrito.cantidad : 0;
@@ -66,11 +67,16 @@ export class Catalogo implements OnInit {
     this.router.navigate(['/home']);
   }
 
- procederAlPago(): void {
+  procederAlPago(): void {
     if (this.itemsCarrito.length === 0) return;
 
+    // Usamos el email de la cuenta realmente logueada (no uno fijo),
+    // para que las notificaciones le lleguen a quien hizo la compra.
+    const cuenta = this.msal.instance.getActiveAccount();
+    const clienteEmail = cuenta?.username || 'cliente@duocuc.cl';
+
     const nuevoPedido = {
-      clienteEmail: 'cliente@duocuc.cl',
+      clienteEmail,
       estado: 'COMPLETADO',
       total: this.carritoService.totalPrecio(),
       items: this.itemsCarrito.map((item: any) => ({
@@ -83,7 +89,7 @@ export class Catalogo implements OnInit {
 
     this.http.post<any>(this.pedidosUrl, nuevoPedido).subscribe({
       next: (pedidoCreado) => {
-        this.notificarPedidoCreado(pedidoCreado, nuevoPedido.clienteEmail);
+        this.notificarPedidoCreado(pedidoCreado, clienteEmail);
         alert('¡Pedido realizado con éxito!');
         this.carritoService.vaciar();
         this.mostrarCarrito = false;
@@ -93,13 +99,28 @@ export class Catalogo implements OnInit {
     });
   }
 
-  // Deja constancia en ms-notificaciones. Si falla, no bloquea la compra:
+  // Deja constancia en ms-notificaciones con el detalle completo del pedido
+  // (productos, cantidades, total y hora). Si falla, no bloquea la compra:
   // el pedido ya quedo guardado, esto es solo el aviso.
   private notificarPedidoCreado(pedido: any, clienteEmail: string): void {
+    const hora = new Date().toLocaleString('es-CL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const detalleProductos = (pedido?.items ?? []).length
+      ? pedido.items.map((i: any) => `${i.cantidad}x ${i.nombreProducto}`).join(', ')
+      : 'sin detalle de productos';
+
+    const totalFormateado = new Intl.NumberFormat('es-CL', {
+      style: 'currency', currency: 'CLP'
+    }).format(pedido?.total ?? 0);
+
     const notificacion = {
       destinatarioEmail: clienteEmail,
-      asunto: 'Pedido recibido',
-      mensaje: `Tu pedido #${pedido?.id ?? ''} fue recibido y esta siendo procesado.`,
+      asunto: `Pedido #${pedido?.id ?? ''} recibido`,
+      mensaje: `Tu pedido #${pedido?.id ?? ''} fue recibido el ${hora}. `
+        + `Total: ${totalFormateado}. Productos: ${detalleProductos}.`,
       tipo: 'PEDIDO_CREADO',
       pedidoId: pedido?.id
     };
