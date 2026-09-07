@@ -1,0 +1,171 @@
+.pedidos-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #1f293d;
+  padding-bottom: 1rem;
+}
+
+.header-section h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.btn-volver {
+  background-color: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-volver:hover {
+  background-color: #334155;
+  color: #ffffff;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  background-color: #0f172a;
+  border-radius: 12px;
+  border: 1px dashed #334155;
+  color: #94a3b8;
+}
+
+.pedido-card {
+  background-color: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.card-header {
+  background-color: #0f172a;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+}
+
+.ticket-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.ticket-id {
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.fecha {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.estado-badge {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #131f37;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  margin-right: 1.2rem;
+}
+
+.item-details {
+  flex-grow: 1;
+}
+
+.item-title {
+  margin: 0 0 0.3rem 0;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.item-qty {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.item-subtotal {
+  font-weight: 700;
+  color: #e2e8f0;
+  font-size: 1.05rem;
+}
+
+.card-footer {
+  background-color: #080d1a;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #1e293b;
+}
+
+.cliente-email {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.total-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.total-label {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.total-amount {
+  color: #38bdf8;
+  font-size: 1.4rem;
+  font-weight: 800;
+}

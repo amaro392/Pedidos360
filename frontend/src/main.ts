@@ -19,24 +19,22 @@ import { msalInterceptorConfigFactory } from './app/msal-interceptor-config';
 const msalInstance = msalInstanceFactory() as PublicClientApplication;
 
 msalInstance.initialize().then(() => {
-  msalInstance.handleRedirectPromise().then(() => {
-    bootstrapApplication(AppComponent, {
-      providers: [
-        provideRouter(routes),
-        provideHttpClient(withInterceptorsFromDi()),
+  bootstrapApplication(AppComponent, {
+    providers: [
+      provideRouter(routes),
+      provideHttpClient(withInterceptorsFromDi()),
 
-        { provide: MSAL_INSTANCE, useValue: msalInstance },
-        { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: msalInterceptorConfigFactory },
-        {
-          provide: MSAL_GUARD_CONFIG,
-          useValue: { interactionType: InteractionType.Redirect }
-        },
-        { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true },
+      { provide: MSAL_INSTANCE, useValue: msalInstance },
+      { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: msalInterceptorConfigFactory },
+      {
+        provide: MSAL_GUARD_CONFIG,
+        useValue: { interactionType: InteractionType.Redirect }
+      },
+      { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true },
 
-        MsalGuard,
-        MsalService,
-        MsalBroadcastService
-      ]
-    }).catch(err => console.error(err));
-  }).catch(err => console.error('Redirect error:', err));
-});
+      MsalGuard,
+      MsalService,
+      MsalBroadcastService
+    ]
+  }).catch(err => console.error(err));
+}).catch(err => console.error('Error al inicializar MSAL:', err));
