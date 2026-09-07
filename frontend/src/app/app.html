@@ -1,0 +1,9 @@
+﻿@if (!isLoggedIn()) {
+  <button (click)="login()">Iniciar sesion</button>
+}
+@if (isLoggedIn()) {
+  <p>Bienvenido, {{ getUserName() }}</p>
+  <button (click)="logout()">Cerrar sesion</button>
+}
+
+<router-outlet></router-outlet>
