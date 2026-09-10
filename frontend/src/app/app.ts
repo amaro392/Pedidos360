@@ -20,7 +20,6 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Procesa la redirección al volver del portal de Microsoft
     this.authService.handleRedirectObservable().subscribe({
       next: (result) => {
         if (result) {
@@ -49,7 +48,6 @@ export class AppComponent implements OnInit {
   }
 
   login(): void {
-    // Forzado directo del flujo de login redirigido
     this.authService.loginRedirect();
   }
 

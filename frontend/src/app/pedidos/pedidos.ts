@@ -1,7 +1,7 @@
 ﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { PedidoService, PedidoDTO } from '../services/pedido';
 
 @Component({
   selector: 'app-pedidos',
@@ -11,13 +11,11 @@ import { Router, RouterModule } from '@angular/router';
   styleUrl: './pedidos.css'
 })
 export class Pedidos implements OnInit {
-  pedidos: any[] = [];
+  pedidos: PedidoDTO[] = [];
   cargando = true;
 
-  private urlPedidos = 'http://localhost:8081/api/pedidos';
-
   constructor(
-    private http: HttpClient, 
+    private pedidoService: PedidoService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -27,13 +25,13 @@ export class Pedidos implements OnInit {
   }
 
   cargarPedidos(): void {
-    this.http.get<any[]>(this.urlPedidos).subscribe({
-      next: (data) => {
+    this.pedidoService.listar().subscribe({
+      next: (data: PedidoDTO[]) => {
         this.pedidos = data;
         this.cargando = false;
-        this.cdr.detectChanges(); // Fuerza renderizado de la lista
+        this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error al obtener pedidos:', err);
         this.cargando = false;
         this.cdr.detectChanges();
