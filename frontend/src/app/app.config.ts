@@ -6,7 +6,10 @@ import {
   MSAL_INTERCEPTOR_CONFIG, 
   MsalInterceptorConfiguration, 
   MSAL_INSTANCE, 
+  MSAL_GUARD_CONFIG,
+  MsalGuardConfiguration,
   MsalService,
+  MsalGuard,
   MsalBroadcastService
 } from '@azure/msal-angular';
 import { IPublicClientApplication, PublicClientApplication, InteractionType } from '@azure/msal-browser';
@@ -41,6 +44,15 @@ export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   };
 }
 
+function msalGuardConfigFactory(): MsalGuardConfiguration {
+  return {
+    interactionType: InteractionType.Redirect,
+    authRequest: {
+      scopes: environment.azure.protectedResourceScopes
+    }
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -51,15 +63,20 @@ export const appConfig: ApplicationConfig = {
       useFactory: MSALInstanceFactory
     },
     {
-      provide: HTTP_INTERCEPTORS,
-      useClass: MsalInterceptor,
-      multi: true
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: msalGuardConfigFactory
     },
     {
       provide: MSAL_INTERCEPTOR_CONFIG,
       useFactory: MSALInterceptorConfigFactory
     },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: MsalInterceptor,
+      multi: true
+    },
     MsalService,
+    MsalGuard,
     MsalBroadcastService
   ]
 };
