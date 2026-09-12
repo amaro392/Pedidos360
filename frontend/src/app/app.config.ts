@@ -34,9 +34,9 @@ export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   
   protectedResourceMap.set(
-    'https://csd8f2cegk.execute-api.us-east-1.amazonaws.com', 
-    environment.azure.protectedResourceScopes
-  );
+  'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com', 
+  environment.azure.protectedResourceScopes
+);
 
   return {
     interactionType: InteractionType.Redirect,
