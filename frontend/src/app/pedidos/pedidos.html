@@ -1,7 +1,13 @@
 ﻿<div class="pedidos-container">
   <div class="header-section">
-    <h1>📦 Mis Pedidos Confirmados</h1>
-    <a routerLink="/catalogo" class="btn-volver">← Volver al Catálogo</a>
+    <h1>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"></path><path d="M3 8l9 5 9-5"></path><path d="M12 13v8"></path></svg>
+      Mis pedidos confirmados
+    </h1>
+    <a routerLink="/catalogo" class="btn-volver">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 18l-6-6 6-6"></path></svg>
+      Volver al catálogo
+    </a>
   </div>
 
   <div *ngIf="pedidos.length === 0" class="empty-state">
@@ -12,7 +18,7 @@
     <div class="card-header">
       <div class="ticket-info">
         <span class="ticket-id">Ticket #{{ pedido.id }}</span>
-        <span class="fecha">📅 {{ pedido.fechaCreacion | date:'dd/MM/yyyy - HH:mm' }}</span>
+        <span class="fecha">{{ pedido.fechaCreacion | date:'dd/MM/yyyy - HH:mm' }}</span>
       </div>
       <span class="estado-badge">{{ pedido.estado }}</span>
     </div>
@@ -31,7 +37,7 @@
     </div>
 
     <div class="card-footer">
-      <span class="cliente-email">✉️ {{ pedido.clienteEmail }}</span>
+      <span class="cliente-email">{{ pedido.clienteEmail }}</span>
       <div class="total-box">
         <span class="total-label">Total Pagado</span>
         <span class="total-amount">${{ pedido.total | number }}</span>

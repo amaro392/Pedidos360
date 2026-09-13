@@ -1,7 +1,13 @@
 <div class="notif-container">
   <div class="header-section">
-    <h1>🔔 Mis Notificaciones</h1>
-    <a routerLink="/home" class="btn-volver">← Volver al Home</a>
+    <h1>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
+      Mis notificaciones
+    </h1>
+    <a routerLink="/home" class="btn-volver">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 18l-6-6 6-6"></path></svg>
+      Volver al home
+    </a>
   </div>
 
   <div *ngIf="cargando" class="empty-state">
@@ -17,7 +23,7 @@
   </div>
 
   <div *ngFor="let n of notificaciones" class="notif-card">
-    <div class="notif-icon">{{ iconoPorTipo(n.tipo) }}</div>
+    <div class="notif-icon" [class.fallida]="n.estado === 'FALLIDA'">{{ iconoPorTipo(n.tipo) }}</div>
     <div class="notif-body">
       <div class="notif-top">
         <span class="notif-asunto">{{ n.asunto }}</span>

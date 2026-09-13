@@ -1,9 +1,18 @@
-﻿@if (!isLoggedIn()) {
+@if (!isLoggedIn()) {
   <div class="login-screen">
-    <div class="login-box">
-      <h1>🎮 GamerStore</h1>
-      <p>Inicia sesión para continuar</p>
-      <button (click)="login()">Iniciar sesión</button>
+    <div class="login-panel">
+      <div class="login-mark">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="11" rx="4"></rect>
+          <path d="M7 10.5v4"></path>
+          <path d="M5 12.5h4"></path>
+          <circle cx="15.5" cy="10.5" r="1"></circle>
+          <circle cx="18" cy="13" r="1"></circle>
+        </svg>
+      </div>
+      <h1>GamerStore</h1>
+      <p>Inicia sesión con tu cuenta para ver el catálogo y tus pedidos.</p>
+      <button class="btn-primary" (click)="login()">Iniciar sesión</button>
     </div>
   </div>
 }
