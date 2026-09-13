@@ -1,13 +1,14 @@
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #0d1b2a;
-  color: white;
+  background: var(--bg);
+  color: var(--ink);
 }
 
 .sidebar {
-  width: 260px;
-  background: #16213e;
+  width: 250px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 0;
@@ -17,92 +18,112 @@
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
   padding: 0 1.5rem 1.5rem;
-  border-bottom: 1px solid #1f2b4d;
+  border-bottom: 1px solid var(--line);
 }
 
 .sidebar-header .logo {
-  font-size: 1.8rem;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 9px;
+  flex-shrink: 0;
+  transform: rotate(-4deg);
 }
 
 .sidebar-header h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
+  color: var(--accent2);
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 1.5rem 0.8rem;
+  padding: 1.5rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  padding: 0.9rem 1rem;
-  border-radius: 10px;
-  color: #8892b0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  color: var(--muted);
   text-decoration: none;
   font-weight: 500;
-  transition: background 0.2s, color 0.2s;
-}
-
-.nav-item:hover {
-  background: #1f2b4d;
-  color: white;
-}
-
-.nav-item.active {
-  background: #0fbcf9;
-  color: #0d1b2a;
+  font-size: 0.95rem;
+  transition: background 0.15s, color 0.15s;
 }
 
 .nav-icon {
-  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.nav-item:hover {
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.nav-item.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 
 .sidebar-footer {
   padding: 1rem 1.5rem 0;
-  border-top: 1px solid #1f2b4d;
+  border-top: 1px solid var(--line);
 }
 
 .sidebar-footer p {
-  color: #8892b0;
+  color: var(--muted);
   font-size: 0.85rem;
-  margin: 0.8rem 0;
+  margin: 0.9rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logout-btn {
   width: 100%;
   background: transparent;
-  border: 1px solid #e94560;
-  color: #e94560;
-  padding: 0.6rem;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 0.55rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: background 0.2s;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
 }
 
 .logout-btn:hover {
-  background: #e94560;
-  color: white;
+  background: var(--danger);
+  color: var(--bg);
 }
 
 .content {
   flex: 1;
-  padding: 3rem;
+  padding: 3.5rem;
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(255, 194, 60, 0.08), transparent 45%);
 }
 
 .content h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
+  font-size: 2.1rem;
+  margin-bottom: 0.6rem;
+  color: var(--accent2);
 }
 
 .subtitle {
-  color: #8892b0;
+  color: var(--muted);
+  font-size: 1rem;
 }

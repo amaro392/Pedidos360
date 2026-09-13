@@ -1,0 +1,13 @@
+﻿@if (!isLoggedIn()) {
+  <div class="login-screen">
+    <div class="login-box">
+      <h1>🎮 GamerStore</h1>
+      <p>Inicia sesión para continuar</p>
+      <button (click)="login()">Iniciar sesión</button>
+    </div>
+  </div>
+}
+
+@if (isLoggedIn()) {
+  <router-outlet></router-outlet>
+}

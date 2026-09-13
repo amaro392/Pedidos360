@@ -1,9 +1,8 @@
 .pedidos-container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1rem;
-  color: #ffffff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 2.5rem 1.5rem;
+  color: var(--ink);
 }
 
 .header-section {
@@ -11,58 +10,61 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  border-bottom: 1px solid #1f293d;
-  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.25rem;
 }
 
 .header-section h1 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #f1f5f9;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.4rem;
+  color: var(--accent2);
 }
 
 .btn-volver {
-  background-color: #1e293b;
-  color: #38bdf8;
-  border: 1px solid #334155;
-  padding: 0.6rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 0.55rem 1rem;
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .btn-volver:hover {
-  background-color: #334155;
-  color: #ffffff;
+  color: var(--ink);
+  border-color: var(--muted);
 }
 
 .empty-state {
   text-align: center;
   padding: 4rem;
-  background-color: #0f172a;
-  border-radius: 12px;
-  border: 1px dashed #334155;
-  color: #94a3b8;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--line);
+  color: var(--muted);
 }
 
 .pedido-card {
-  background-color: #0b1329;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   margin-bottom: 1.5rem;
   overflow: hidden;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 .card-header {
-  background-color: #0f172a;
+  background-color: var(--surface-raised);
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #1e293b;
 }
 
 .ticket-info {
@@ -72,25 +74,44 @@
 }
 
 .ticket-id {
-  color: #38bdf8;
+  color: var(--accent2);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .fecha {
-  color: #94a3b8;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
 .estado-badge {
-  background-color: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background-color: var(--ok-soft);
+  color: var(--ok);
+  border: 1px solid rgba(79, 224, 171, 0.3);
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
+}
+
+/* Línea de "desgarro" entre el encabezado y el cuerpo del ticket */
+.card-header {
+  position: relative;
+}
+.card-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 6px,
+    transparent 6px 13px
+  );
 }
 
 .card-body {
@@ -101,7 +122,7 @@
   display: flex;
   align-items: center;
   padding: 0.8rem 0;
-  border-bottom: 1px solid #131f37;
+  border-bottom: 1px solid var(--line);
 }
 
 .item-row:last-child {
@@ -109,12 +130,12 @@
 }
 
 .item-img {
-  width: 70px;
-  height: 70px;
+  width: 66px;
+  height: 66px;
   object-fit: cover;
   border-radius: 8px;
-  background-color: #1e293b;
-  border: 1px solid #334155;
+  background-color: #f4ece0;
+  border: 1px solid var(--line);
   margin-right: 1.2rem;
 }
 
@@ -124,32 +145,35 @@
 
 .item-title {
   margin: 0 0 0.3rem 0;
-  font-size: 1rem;
-  color: #f8fafc;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--ink);
 }
 
 .item-qty {
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
 .item-subtotal {
   font-weight: 700;
-  color: #e2e8f0;
-  font-size: 1.05rem;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .card-footer {
-  background-color: #080d1a;
+  background-color: var(--bg);
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #1e293b;
+  border-top: 1px solid var(--line);
 }
 
 .cliente-email {
-  color: #64748b;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -160,12 +184,13 @@
 }
 
 .total-label {
-  color: #94a3b8;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
 .total-amount {
-  color: #38bdf8;
-  font-size: 1.4rem;
+  color: var(--accent2);
+  font-size: 1.35rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }

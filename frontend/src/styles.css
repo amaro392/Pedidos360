@@ -1,3 +1,31 @@
+/* ============================================================
+   Pedidos360 — GamerStore
+   Identidad "boletería de arcade": base púrpura-tinta cálida,
+   acento coral de marquesina + dorado de ticket, tipografía
+   de cartel de sala recreativa para titulares y una grotesca
+   técnica para todo lo demás.
+   ============================================================ */
+:root {
+  --bg: #1c1330;
+  --surface: #241a3d;
+  --surface-raised: #2f224f;
+  --line: #4a3770;
+  --ink: #f7ecd8;
+  --muted: #b3a3d1;
+  --accent: #ff6a3d;
+  --accent-ink: #1c1330;
+  --accent2: #ffc23c;
+  --accent2-ink: #1c1330;
+  --danger: #ff5c72;
+  --danger-soft: rgba(255, 92, 114, 0.16);
+  --ok: #4fe0ab;
+  --ok-soft: rgba(79, 224, 171, 0.14);
+  --radius: 10px;
+  --radius-lg: 18px;
+  --font-display: 'Bungee', 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,5 +33,64 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #0d1b2a;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+/* Línea perforada: el motivo recurrente del ticket, reservado
+   para separar cabecera/cuerpo en tarjetas tipo boleto. */
+.rule-perforated {
+  height: 1px;
+  border: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 6px,
+    transparent 6px 13px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

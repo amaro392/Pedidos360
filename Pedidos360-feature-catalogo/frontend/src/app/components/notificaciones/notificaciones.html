@@ -1,0 +1,35 @@
+<div class="notif-container">
+  <div class="header-section">
+    <h1>🔔 Mis Notificaciones</h1>
+    <a routerLink="/home" class="btn-volver">← Volver al Home</a>
+  </div>
+
+  <div *ngIf="cargando" class="empty-state">
+    Cargando notificaciones...
+  </div>
+
+  <div *ngIf="!cargando && error" class="empty-state error-state">
+    No se pudo conectar con el servicio de notificaciones.
+  </div>
+
+  <div *ngIf="!cargando && !error && notificaciones.length === 0" class="empty-state">
+    No tienes notificaciones todavía.
+  </div>
+
+  <div *ngFor="let n of notificaciones" class="notif-card">
+    <div class="notif-icon">{{ iconoPorTipo(n.tipo) }}</div>
+    <div class="notif-body">
+      <div class="notif-top">
+        <span class="notif-asunto">{{ n.asunto }}</span>
+        <span class="notif-fecha">{{ n.fechaEnvio | date:'dd/MM/yyyy - HH:mm' }}</span>
+      </div>
+      <p class="notif-mensaje">{{ n.mensaje }}</p>
+      <div class="notif-footer">
+        <span class="notif-tipo">{{ n.tipo }}</span>
+        <span class="notif-estado" [class.enviada]="n.estado === 'ENVIADA'" [class.fallida]="n.estado === 'FALLIDA'">
+          {{ n.estado }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
