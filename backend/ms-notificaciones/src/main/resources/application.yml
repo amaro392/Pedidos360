@@ -1,0 +1,28 @@
+spring:
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+        prefetch: 10
+
+app:
+  rabbitmq:
+    exchanges:
+      pedidos: pedidos.exchange
+      dlx: pedidos.dlx
+    queues:
+      notificaciones: notificaciones.pedido.queue
+      notificaciones-dlq: notificaciones.pedido.dlq
+      tickets: tickets.pedido.queue
+      tickets-dlq: tickets.pedido.dlq
+    routing-keys:
+      pedido-creado: pedido.creado
+      pedido-cancelado: pedido.cancelado
+      pedido-todos: pedido.*
+      notificaciones-dead: notificaciones.dead
+      tickets-dead: tickets.dead
+    dlq-listener-enabled: false
