@@ -1,6 +1,7 @@
 package cl.duoc.pedidos360.mspedidos.controller;
 
 import cl.duoc.pedidos360.mspedidos.entity.Pedido;
+import cl.duoc.pedidos360.mspedidos.messaging.PedidoEventPublisher;
 import cl.duoc.pedidos360.mspedidos.repository.PedidoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,11 @@ import java.util.List;
 public class PedidoController {
 
     private final PedidoRepository pedidoRepository;
+    private final PedidoEventPublisher publisher;
 
-    public PedidoController(PedidoRepository pedidoRepository) {
+    public PedidoController(PedidoRepository pedidoRepository, PedidoEventPublisher publisher) {
         this.pedidoRepository = pedidoRepository;
+        this.publisher = publisher;
     }
 
     @GetMapping
@@ -27,6 +30,7 @@ public class PedidoController {
     @PostMapping
     public ResponseEntity<Pedido> crear(@RequestBody Pedido pedido) {
         Pedido guardado = pedidoRepository.save(pedido);
+        publisher.publicarCreado(guardado);
         return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 }

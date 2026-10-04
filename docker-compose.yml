@@ -1,0 +1,47 @@
+# Cluster RabbitMQ de 2 nodos para Pedidos360.
+#   docker compose up -d
+#   Dashboard nodo 1: http://localhost:15672   |   nodo 2: http://localhost:15673
+# Credenciales: variables RABBITMQ_USER / RABBITMQ_PASS (por defecto pedidos360 / pedidos360).
+# Los microservicios se conectan con:  RABBITMQ_ADDRESSES=localhost:5672,localhost:5673
+
+x-rabbit: &rabbit
+  image: rabbitmq:3.13-management
+  restart: unless-stopped
+  environment:
+    RABBITMQ_ERLANG_COOKIE: pedidos360-cluster-cookie
+    RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-pedidos360}
+    RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-pedidos360}
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+    interval: 15s
+    timeout: 10s
+    retries: 10
+
+services:
+  rabbit1:
+    <<: *rabbit
+    hostname: rabbit1
+    container_name: rabbit1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-cluster.conf:ro
+      - rabbit1-data:/var/lib/rabbitmq
+
+  rabbit2:
+    <<: *rabbit
+    hostname: rabbit2
+    container_name: rabbit2
+    depends_on:
+      - rabbit1
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-cluster.conf:ro
+      - rabbit2-data:/var/lib/rabbitmq
+
+volumes:
+  rabbit1-data:
+  rabbit2-data:

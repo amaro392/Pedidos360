@@ -1,0 +1,13 @@
+spring:
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
+app:
+  rabbitmq:
+    exchanges:
+      pedidos: pedidos.exchange
+    routing-keys:
+      pedido-creado: pedido.creado
+      pedido-cancelado: pedido.cancelado

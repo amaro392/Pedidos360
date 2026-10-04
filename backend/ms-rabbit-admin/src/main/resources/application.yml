@@ -1,0 +1,9 @@
+spring:
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
+app:
+  rabbitmq:
+    management-url: http://${RABBITMQ_MGMT_HOST:localhost}:15672
