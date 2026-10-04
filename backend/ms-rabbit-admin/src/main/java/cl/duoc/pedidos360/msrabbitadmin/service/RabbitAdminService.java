@@ -9,6 +9,11 @@ import org.springframework.web.client.RestClient;
 
 import java.util.*;
 
+/**
+ * Unico punto que habla con RabbitMQ: los controladores solo llaman a estos
+ * metodos. Crear/eliminar/purgar usa AmqpAdmin (protocolo AMQP); listar usa la
+ * API HTTP de management, porque AMQP no permite enumerar recursos.
+ */
 @Service
 public class RabbitAdminService {
 
@@ -23,6 +28,8 @@ public class RabbitAdminService {
         this.management = RestClient.builder().baseUrl(managementUrl)
                 .defaultHeaders(h -> h.setBasicAuth(user, pass)).build();
     }
+
+    // ---------------------------------------------------------------- colas
 
     public void crearCola(QueueRequest r) {
         validarNombre(r.name());
@@ -46,11 +53,31 @@ public class RabbitAdminService {
 
     public void eliminarCola(String name) {
         validarNombre(name);
-        if (amqpAdmin.getQueueInfo(name) == null) {
-            throw new NoSuchElementException("La cola '" + name + "' no existe");
-        }
+        exigirCola(name);
         amqpAdmin.deleteQueue(name);
     }
+
+    /** Vacia la cola sin eliminarla. Devuelve cuantos mensajes se purgaron. */
+    public int purgarCola(String name) {
+        validarNombre(name);
+        exigirCola(name);
+        return amqpAdmin.purgeQueue(name);
+    }
+
+    public List<Map<String, Object>> listarColas() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> q : consultar("/api/queues")) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", q.get("name"));
+            m.put("messages", q.getOrDefault("messages", 0));
+            m.put("consumers", q.getOrDefault("consumers", 0));
+            m.put("state", q.get("state"));
+            out.add(m);
+        }
+        return out;
+    }
+
+    // ------------------------------------------------------------ exchanges
 
     public void crearExchange(ExchangeRequest r) {
         validarNombre(r.name());
@@ -67,8 +94,26 @@ public class RabbitAdminService {
 
     public void eliminarExchange(String name) {
         validarNombre(name);
+        boolean existe = listarExchanges().stream().anyMatch(e -> name.equals(e.get("name")));
+        if (!existe) {
+            throw new NoSuchElementException("El exchange '" + name + "' no existe");
+        }
         amqpAdmin.deleteExchange(name);
     }
+
+    public List<Map<String, Object>> listarExchanges() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> e : consultar("/api/exchanges")) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", e.get("name"));
+            m.put("type", e.get("type"));
+            m.put("durable", e.get("durable"));
+            out.add(m);
+        }
+        return out;
+    }
+
+    // ------------------------------------------------------------- bindings
 
     public void crearBinding(BindingRequest r) {
         amqpAdmin.declareBinding(toBinding(r));
@@ -78,21 +123,33 @@ public class RabbitAdminService {
         amqpAdmin.removeBinding(toBinding(r));
     }
 
-    public List<Map<String, Object>> listarColas() {
-        List<Map<String, Object>> raw = management.get().uri("/api/queues")
-                .retrieve().body(new ParameterizedTypeReference<>() {});
+    public List<Map<String, Object>> listarBindings() {
         List<Map<String, Object>> out = new ArrayList<>();
-        if (raw != null) {
-            for (Map<String, Object> q : raw) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("name", q.get("name"));
-                m.put("messages", q.getOrDefault("messages", 0));
-                m.put("consumers", q.getOrDefault("consumers", 0));
-                m.put("state", q.get("state"));
-                out.add(m);
-            }
+        for (Map<String, Object> b : consultar("/api/bindings")) {
+            // El binding implicito al default exchange ("") no aporta informacion
+            if (b.get("source") == null || b.get("source").toString().isEmpty()) continue;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("exchange", b.get("source"));
+            m.put("destination", b.get("destination"));
+            m.put("destinationType", b.get("destination_type"));
+            m.put("routingKey", b.get("routing_key"));
+            out.add(m);
         }
         return out;
+    }
+
+    // ------------------------------------------------------------- privados
+
+    private List<Map<String, Object>> consultar(String path) {
+        List<Map<String, Object>> raw = management.get().uri(path)
+                .retrieve().body(new ParameterizedTypeReference<>() {});
+        return raw == null ? List.of() : raw;
+    }
+
+    private void exigirCola(String name) {
+        if (amqpAdmin.getQueueInfo(name) == null) {
+            throw new NoSuchElementException("La cola '" + name + "' no existe");
+        }
     }
 
     private Binding toBinding(BindingRequest r) {

@@ -59,6 +59,8 @@ export class Notificaciones implements OnInit {
       case 'PEDIDO_CREADO': return '🛒';
       case 'PEDIDO_ENVIADO': return '📦';
       case 'PEDIDO_CANCELADO': return '❌';
+      case 'TICKET_GENERADO': return '🎫';
+      case 'DOCUMENTO_GENERADO': return '📄';
       default: return '🔔';
     }
   }

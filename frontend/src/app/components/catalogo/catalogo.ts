@@ -5,7 +5,6 @@ import { MsalService } from '@azure/msal-angular';
 import { CarritoService } from '../../services/carrito';
 import { ProductoService } from '../../services/producto';
 import { PedidoService, PedidoDTO } from '../../services/pedido';
-import { NotificacionService, NotificacionDTO } from '../../services/notificacion';
 
 @Component({
   selector: 'app-catalogo',
@@ -23,7 +22,6 @@ export class Catalogo implements OnInit {
     public carritoService: CarritoService,
     private productoService: ProductoService,
     private pedidoService: PedidoService,
-    private notificacionService: NotificacionService,
     private router: Router,
     private cdr: ChangeDetectorRef,
     private msal: MsalService
@@ -87,41 +85,14 @@ export class Catalogo implements OnInit {
 
     this.pedidoService.crear(nuevoPedido).subscribe({
       next: (pedidoCreado: any) => {
-        this.notificarPedidoCreado(pedidoCreado, clienteEmail);
+        // La notificacion y el ticket los genera ms-notificaciones al consumir el
+        // evento pedido.creado publicado por ms-pedidos en RabbitMQ.
         alert('¡Pedido realizado con éxito!');
         this.carritoService.vaciar();
         this.mostrarCarrito = false;
         this.router.navigate(['/pedidos']);
       },
       error: (err: any) => console.error('Error al guardar pedido:', err)
-    });
-  }
-
-  private notificarPedidoCreado(pedido: any, clienteEmail: string): void {
-    const hora = new Date().toLocaleString('es-CL', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-
-    const detalleProductos = (pedido?.items ?? []).length
-      ? pedido.items.map((i: any) => `${i.cantidad}x ${i.nombreProducto}`).join(', ')
-      : 'sin detalle de productos';
-
-    const totalFormateado = new Intl.NumberFormat('es-CL', {
-      style: 'currency', currency: 'CLP'
-    }).format(pedido?.total ?? 0);
-
-    const notificacion: NotificacionDTO = {
-      destinatarioEmail: clienteEmail,
-      asunto: `Pedido #${pedido?.id ?? ''} recibido`,
-      mensaje: `Tu pedido #${pedido?.id ?? ''} fue recibido el ${hora}. `
-        + `Total: ${totalFormateado}. Productos: ${detalleProductos}.`,
-      tipo: 'PEDIDO_CREADO',
-      pedidoId: pedido?.id
-    };
-
-    this.notificacionService.crear(notificacion).subscribe({
-      error: (err: any) => console.error('No se pudo registrar la notificacion:', err)
     });
   }
 }

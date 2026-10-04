@@ -2,6 +2,7 @@ package cl.duoc.pedidos360.ms_notificaciones.messaging.notificacion;
 
 import cl.duoc.pedidos360.events.PedidoEvent;
 import cl.duoc.pedidos360.ms_notificaciones.entity.Notificacion;
+import cl.duoc.pedidos360.ms_notificaciones.messaging.ConsumerErrorHandler;
 import cl.duoc.pedidos360.ms_notificaciones.service.NotificacionService;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
@@ -18,9 +19,11 @@ public class PedidoNotificacionConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(PedidoNotificacionConsumer.class);
     private final NotificacionService service;
+    private final ConsumerErrorHandler errores;
 
-    public PedidoNotificacionConsumer(NotificacionService service) {
+    public PedidoNotificacionConsumer(NotificacionService service, ConsumerErrorHandler errores) {
         this.service = service;
+        this.errores = errores;
     }
 
     @RabbitListener(queues = "${app.rabbitmq.queues.notificaciones}")
@@ -29,6 +32,9 @@ public class PedidoNotificacionConsumer {
             @Header(AmqpHeaders.RECEIVED_ROUTING_KEY) String routingKey,
             @Header(AmqpHeaders.REDELIVERED) boolean redelivered) throws IOException {
         try {
+            if (ev.pedidoId() == null) {
+                throw new IllegalArgumentException("pedidoId nulo");
+            }
             if (ev.clienteEmail() == null || ev.clienteEmail().isBlank()) {
                 throw new IllegalArgumentException("clienteEmail vacio");
             }
@@ -41,19 +47,8 @@ public class PedidoNotificacionConsumer {
             service.enviar(n);
             channel.basicAck(tag, false);
             log.info("ACK notificacion pedidoId={} key={}", ev.pedidoId(), routingKey);
-        } catch (IllegalArgumentException e) {
-            // Error NO recuperable: directo a la DLQ (via DLX)
-            log.error("NACK->DLQ (no recuperable) pedidoId={}: {}", ev.pedidoId(), e.getMessage());
-            channel.basicNack(tag, false, false);
         } catch (Exception e) {
-            // Error recuperable: un reintento y luego DLQ
-            if (!redelivered) {
-                log.warn("NACK requeue (reintento) pedidoId={}: {}", ev.pedidoId(), e.getMessage());
-                channel.basicNack(tag, false, true);
-            } else {
-                log.error("NACK->DLQ (reintento agotado) pedidoId={}: {}", ev.pedidoId(), e.getMessage());
-                channel.basicNack(tag, false, false);
-            }
+            errores.manejar(channel, tag, redelivered, e, "notificacion", "pedidoId=" + ev.pedidoId());
         }
     }
 }
