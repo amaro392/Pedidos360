@@ -8,6 +8,8 @@ import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.web.client.RestClient;
+
 
 import java.util.NoSuchElementException;
 
@@ -18,8 +20,8 @@ import static org.mockito.Mockito.*;
 class RabbitAdminServiceTest {
 
     private final AmqpAdmin admin = mock(AmqpAdmin.class);
-    private final RabbitAdminService service =
-            new RabbitAdminService(admin, "http://localhost:15672", "u", "p");
+       private final RabbitAdminService service =
+            new RabbitAdminService(admin, mock(RestClient.class));
 
     @Test
     void crearCola_declara_la_cola() {

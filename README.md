@@ -11,7 +11,7 @@ Autenticación con Azure AD (IDaaS) y mensajería asíncrona con **RabbitMQ** (E
 | `ms-productos` | 8082 | Catálogo de productos |
 | `ms-pedidos` | 8081 | Crea pedidos y **publica** eventos en RabbitMQ |
 | `ms-clientes` | 8084 | Gestión de clientes |
-| `ms-notificaciones` | 8083 | **Consume** eventos: genera notificaciones y tickets |
+| `ms-notificaciones` | 8083 | **Consume** eventos: genera notificaciones, tickets y documentos |
 | `ms-rabbit-admin` | 8085 | Administración de colas, exchanges y bindings vía REST |
 
 Todos los microservicios validan el JWT emitido por Azure AD (filtro de Spring Security + validador de audience).
@@ -23,24 +23,28 @@ flowchart LR
     P[ms-pedidos<br/>POST /api/pedidos] -->|pedido.creado| E{{pedidos.exchange<br/>topic}}
     E -->|pedido.*| QN[notificaciones.pedido.queue]
     E -->|pedido.creado| QT[tickets.pedido.queue]
+    E -->|pedido.creado| QD[documentos.pedido.queue]
     QN --> CN[PedidoNotificacionConsumer]
     QT --> CT[TicketConsumer]
+    QD --> CD[DocumentoConsumer]
     QN -. rechazado .-> D{{pedidos.dlx<br/>direct}}
     QT -. rechazado .-> D
+    QD -. rechazado .-> D
     D -->|notificaciones.dead| DN[notificaciones.pedido.dlq]
     D -->|tickets.dead| DT[tickets.pedido.dlq]
+    D -->|documentos.dead| DD[documentos.pedido.dlq]
 ```
 
 | Elemento | Nombre | Definido en |
 |---|---|---|
 | Exchange de eventos | `pedidos.exchange` (topic) | `application.yml` de ms-pedidos y ms-notificaciones |
 | Exchange de mensajes muertos | `pedidos.dlx` (direct) | `application.yml` de ms-notificaciones |
-| Colas | `notificaciones.pedido.queue`, `tickets.pedido.queue` (quorum) | `application.yml` de ms-notificaciones |
-| DLQ | `notificaciones.pedido.dlq`, `tickets.pedido.dlq` | `application.yml` de ms-notificaciones |
-| Routing keys | `pedido.creado`, `pedido.cancelado`, `pedido.*`, `notificaciones.dead`, `tickets.dead` | `application.yml` |
+| Colas | `notificaciones.pedido.queue`, `tickets.pedido.queue`, `documentos.pedido.queue` (quorum) | `application.yml` de ms-notificaciones |
+| DLQ | `notificaciones.pedido.dlq`, `tickets.pedido.dlq`, `documentos.pedido.dlq` | `application.yml` de ms-notificaciones |
+| Routing keys | `pedido.creado`, `pedido.cancelado`, `pedido.*`, `notificaciones.dead`, `tickets.dead`, `documentos.dead` | `application.yml` |
 
 Los beans `Queue`, `Exchange` y `Binding` están en clases `@Configuration` separadas de la lógica de negocio
-(`NotificacionesRabbitConfig`, `TicketsRabbitConfig`, `RabbitCommonConfig`, `RabbitMQConfig`).
+(`NotificacionesRabbitConfig`, `TicketsRabbitConfig`, `DocumentosRabbitConfig`, `RabbitCommonConfig`, `RabbitMQConfig`).
 
 ### Política de errores en los consumidores
 
@@ -53,7 +57,7 @@ Los consumidores usan ACK manual. La política es única y está en `ConsumerErr
 | Error recuperable, primera vez | `NACK` con reencolado (un reintento) |
 | Error recuperable, mensaje ya reentregado | `NACK` sin reencolar, va a la **DLQ** |
 
-Cada decisión queda registrada en el log. El `DeadLetterConsumer` (opcional, ver más abajo) registra además cada mensaje que llega a una DLQ.
+Cada decisión queda registrada en el log. El `DeadLetterConsumer` (opcional, ver más abajo) registra además cada mensaje que llega a cualquiera de las tres DLQ.
 
 Si RabbitMQ no está disponible, `ms-pedidos` igual guarda el pedido: el fallo de publicación se registra en el log y no interrumpe la operación.
 
@@ -156,8 +160,8 @@ Los errores de validación responden `400` con el detalle por campo; recursos in
 
 1. Con todo levantado, crear un pedido desde el frontend (o `POST /api/pedidos` con `clienteEmail`).
 2. En el log de `ms-pedidos`: `Evento publicado exchange=pedidos.exchange key=pedido.creado`.
-3. En el log de `ms-notificaciones`: `ACK notificacion ...` y `ACK ticket TCK-<id>`.
-4. Consultar `GET /api/notificaciones/pedido/{id}`: aparecen la notificación (`PEDIDO_CREADO`) y el ticket (`TICKET_GENERADO`). Ambos los genera RabbitMQ; el frontend ya no crea notificaciones por su cuenta, y también se ven en la vista Notificaciones.
+3. En el log de `ms-notificaciones`: `ACK notificacion ...`, `ACK ticket TCK-<id>` y `ACK documento DOC-<id>`.
+4. Consultar `GET /api/notificaciones/pedido/{id}`: aparecen la notificación (`PEDIDO_CREADO`), el ticket (`TICKET_GENERADO`) y el documento (`DOCUMENTO_GENERADO`). Los tres los genera RabbitMQ; el frontend ya no crea notificaciones por su cuenta, y también se ven en la vista Notificaciones.
 
 ### Probar la DLQ
 

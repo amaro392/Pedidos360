@@ -2,10 +2,11 @@ package cl.duoc.pedidos360.msrabbitadmin.service;
 
 import cl.duoc.pedidos360.msrabbitadmin.dto.*;
 import org.springframework.amqp.core.*;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.*;
 
@@ -20,13 +21,10 @@ public class RabbitAdminService {
     private final AmqpAdmin amqpAdmin;
     private final RestClient management;
 
-    public RabbitAdminService(AmqpAdmin amqpAdmin,
-            @Value("${app.rabbitmq.management-url}") String managementUrl,
-            @Value("${spring.rabbitmq.username}") String user,
-            @Value("${spring.rabbitmq.password}") String pass) {
+        public RabbitAdminService(AmqpAdmin amqpAdmin,
+            @Qualifier("rabbitManagement") RestClient management) {
         this.amqpAdmin = amqpAdmin;
-        this.management = RestClient.builder().baseUrl(managementUrl)
-                .defaultHeaders(h -> h.setBasicAuth(user, pass)).build();
+        this.management = management;
     }
 
     // ---------------------------------------------------------------- colas

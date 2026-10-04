@@ -29,7 +29,7 @@ public class DeadLetterConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DeadLetterConsumer.class);
 
-    @RabbitListener(queues = {"${app.rabbitmq.queues.notificaciones-dlq}", "${app.rabbitmq.queues.tickets-dlq}"})
+    @RabbitListener(queues = {"${app.rabbitmq.queues.notificaciones-dlq}", "${app.rabbitmq.queues.tickets-dlq}","${app.rabbitmq.queues.documentos-dlq}" })
     public void onDead(Message message, Channel channel,
             @Header(AmqpHeaders.DELIVERY_TAG) long tag) throws IOException {
         String origen = "desconocido";
