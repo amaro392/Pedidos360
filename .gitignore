@@ -17,3 +17,9 @@ backend/**/data/
 .idea/
 *.iml
 .vscode/
+
+# Secretos y respaldos
+.env
+.env.*
+*.bak
+*.pem
