@@ -28,6 +28,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> conflicto(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+    }
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> noExiste(NoSuchElementException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

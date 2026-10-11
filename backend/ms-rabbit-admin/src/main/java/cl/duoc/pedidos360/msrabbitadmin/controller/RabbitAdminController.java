@@ -46,6 +46,11 @@ public class RabbitAdminController {
         return service.listarColas();
     }
 
+    @PutMapping("/queues/{name}")
+    public Map<String, String> actualizarCola(@PathVariable String name, @Valid @RequestBody QueueRequest r) {
+        service.actualizarCola(name, r);
+        return Map.of("message", "Cola actualizada", "name", name);
+    }
     @DeleteMapping("/queues/{name}")
     public ResponseEntity<Void> eliminarCola(@PathVariable String name) {
         service.eliminarCola(name);
