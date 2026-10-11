@@ -18,7 +18,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> validacion(MethodArgumentNotValidException e) {
         Map<String, String> campos = new LinkedHashMap<>();
-        e.getBindingResult().getFieldErrors().forEach(f -> campos.put(f.getField(), f.getDefaultMessage()));
+        e.getBindingResult().getFieldErrors().forEach(f ->
+                campos.merge(f.getField(), f.getDefaultMessage(), (a, b) -> a + "; " + b));
         return ResponseEntity.badRequest().body(Map.of("error", "Validacion fallida", "campos", campos));
     }
 
@@ -27,6 +28,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> conflicto(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+    }
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> noExiste(NoSuchElementException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

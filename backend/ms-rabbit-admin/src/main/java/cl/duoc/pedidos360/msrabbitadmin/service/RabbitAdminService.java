@@ -2,10 +2,11 @@ package cl.duoc.pedidos360.msrabbitadmin.service;
 
 import cl.duoc.pedidos360.msrabbitadmin.dto.*;
 import org.springframework.amqp.core.*;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.*;
 
@@ -20,13 +21,10 @@ public class RabbitAdminService {
     private final AmqpAdmin amqpAdmin;
     private final RestClient management;
 
-    public RabbitAdminService(AmqpAdmin amqpAdmin,
-            @Value("${app.rabbitmq.management-url}") String managementUrl,
-            @Value("${spring.rabbitmq.username}") String user,
-            @Value("${spring.rabbitmq.password}") String pass) {
+        public RabbitAdminService(AmqpAdmin amqpAdmin,
+            @Qualifier("rabbitManagement") RestClient management) {
         this.amqpAdmin = amqpAdmin;
-        this.management = RestClient.builder().baseUrl(managementUrl)
-                .defaultHeaders(h -> h.setBasicAuth(user, pass)).build();
+        this.management = management;
     }
 
     // ---------------------------------------------------------------- colas
@@ -51,6 +49,30 @@ public class RabbitAdminService {
         amqpAdmin.declareQueue(b.build());
     }
 
+    /**
+     * RabbitMQ no permite cambiar los argumentos de una cola existente
+     * (PRECONDITION_FAILED), asi que actualizar = recrearla con la nueva
+     * configuracion. Solo si esta vacia; se restauran sus bindings.
+     */
+    public void actualizarCola(String name, QueueRequest r) {
+        validarNombre(name);
+        if (!name.equals(r.name())) {
+            throw new IllegalArgumentException("El nombre del body debe coincidir con el de la ruta");
+        }
+        exigirCola(name);
+        if (amqpAdmin.getQueueInfo(name).getMessageCount() > 0) {
+            throw new IllegalStateException("La cola '" + name + "' tiene mensajes; purgala antes de actualizarla");
+        }
+        List<Map<String, Object>> bindings = listarBindings().stream()
+                .filter(b -> name.equals(b.get("destination")) && "queue".equals(b.get("destinationType")))
+                .toList();
+        amqpAdmin.deleteQueue(name);
+        crearCola(r);
+        for (Map<String, Object> b : bindings) {
+            amqpAdmin.declareBinding(new Binding(name, Binding.DestinationType.QUEUE,
+                    (String) b.get("exchange"), (String) b.get("routingKey"), null));
+        }
+    }
     public void eliminarCola(String name) {
         validarNombre(name);
         exigirCola(name);
