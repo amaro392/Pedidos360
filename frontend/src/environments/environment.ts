@@ -7,8 +7,8 @@ export const environment = {
     redirectUri: 'http://localhost:4200/',
     protectedResourceScopes: ['api://9078dcc3-9503-4237-a463-d5a4a96cb61f/access_as_user']
   },
-  apiBaseUrl: 'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod',
-  pedidosApiUrl: 'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod',
-  notificacionesApiUrl: 'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod',
-  clientesApiUrl: 'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod'
+  apiBaseUrl: 'http://localhost:8082/api',
+pedidosApiUrl: 'http://localhost:8081/api',
+notificacionesApiUrl: 'http://localhost:8083/api',
+clientesApiUrl: 'http://localhost:8084/api'
 };
