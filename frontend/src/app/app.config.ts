@@ -22,7 +22,7 @@ export function MSALInstanceFactory(): IPublicClientApplication {
     auth: {
       clientId: environment.azure.clientId,
       authority: environment.azure.authority,
-      redirectUri: environment.azure.redirectUri
+      redirectUri: window.location.origin + '/'
     },
     cache: {
       cacheLocation: 'localStorage'
@@ -33,10 +33,10 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   
-  protectedResourceMap.set(
-  'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com', 
-  environment.azure.protectedResourceScopes
-);
+    protectedResourceMap.set(
+    'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod/*',
+    environment.azure.protectedResourceScopes
+  );
 
   return {
     interactionType: InteractionType.Redirect,
