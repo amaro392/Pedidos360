@@ -6,8 +6,14 @@ export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   const scopes = environment.azure.protectedResourceScopes;
 
-  // Protege la raíz del Stage /prod para inyectar el Bearer Token en todas las subrutas
+  // API Gateway (AWS)
   protectedResourceMap.set('https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod/*', scopes);
+
+  // Microservicios locales
+  protectedResourceMap.set('http://localhost:8081/api/*', scopes);
+  protectedResourceMap.set('http://localhost:8082/api/*', scopes);
+  protectedResourceMap.set('http://localhost:8083/api/*', scopes);
+  protectedResourceMap.set('http://localhost:8084/api/*', scopes);
 
   return {
     interactionType: InteractionType.Redirect,

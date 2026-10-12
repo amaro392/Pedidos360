@@ -32,11 +32,12 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  
-  protectedResourceMap.set(
-  'https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com', 
-  environment.azure.protectedResourceScopes
-);
+
+  protectedResourceMap.set('https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com', environment.azure.protectedResourceScopes);
+  protectedResourceMap.set('http://localhost:8081/api', environment.azure.protectedResourceScopes);
+  protectedResourceMap.set('http://localhost:8082/api', environment.azure.protectedResourceScopes);
+  protectedResourceMap.set('http://localhost:8083/api', environment.azure.protectedResourceScopes);
+  protectedResourceMap.set('http://localhost:8084/api', environment.azure.protectedResourceScopes);
 
   return {
     interactionType: InteractionType.Redirect,
