@@ -1,0 +1,35 @@
+# Kafka UI para administrar brokers y topicos de Pedidos360.
+#
+# Requiere que el cluster Kafka ya este arriba (docker-compose.kafka.yml), porque se une
+# a su red Docker (pedidos360-kafka-net).
+#
+#   cd kafka
+#   docker compose -f docker-compose.kafka.yml up -d
+#   docker compose -f docker-compose.kafka-ui.yml up -d
+#
+# Panel: http://localhost:8090   (en AWS: http://<IP_EC2>:8090)
+# Credenciales: variables KAFKA_UI_USER / KAFKA_UI_PASS (por defecto pedidos360 / pedidos360).
+
+name: pedidos360-kafka-ui
+
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pedidos360
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:29092,kafka2:29092
+      AUTH_TYPE: LOGIN_FORM
+      SPRING_SECURITY_USER_NAME: ${KAFKA_UI_USER:-pedidos360}
+      SPRING_SECURITY_USER_PASSWORD: ${KAFKA_UI_PASS:-pedidos360}
+      DYNAMIC_CONFIG_ENABLED: "false"
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    name: pedidos360-kafka-net
+    external: true

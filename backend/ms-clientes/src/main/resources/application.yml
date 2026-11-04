@@ -1,0 +1,16 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      acks: all
+      properties:
+        # Si Kafka no esta disponible, no bloquear la operacion de negocio (por defecto espera 60 s)
+        max.block.ms: 3000
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topics:
+      clientes-registro: clientes.registro

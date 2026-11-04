@@ -1,6 +1,7 @@
 package cl.duoc.pedidos360.msclientes.controller;
 
 import cl.duoc.pedidos360.msclientes.entity.Cliente;
+import cl.duoc.pedidos360.msclientes.messaging.ClienteEventProducer;
 import cl.duoc.pedidos360.msclientes.service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,9 @@ public class ClienteController {
 
     @Autowired
     private ClienteService service;
+
+    @Autowired
+    private ClienteEventProducer kafkaProducer;
 
     @GetMapping
     public List<Cliente> listar() {
@@ -37,6 +41,7 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<Cliente> crear(@RequestBody Cliente cliente) {
         Cliente creado = service.guardar(cliente);
+        kafkaProducer.publicarRegistrado(creado); // Kafka: topico clientes.registro
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 

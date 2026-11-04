@@ -1,7 +1,7 @@
 # Pedidos360
 
 Sistema de pedidos con arquitectura de microservicios (Java 17 + Spring Boot) y frontend Angular.
-Autenticación con Azure AD (IDaaS) y mensajería asíncrona con **RabbitMQ** (Evaluación Parcial N°2, DSY1107).
+Autenticación con Azure AD (IDaaS), mensajería asíncrona con **RabbitMQ** (Evaluación Parcial N°2, DSY1107) y streaming de eventos con **Kafka** (Evaluación Parcial N°3).
 
 ## Arquitectura
 
@@ -13,6 +13,7 @@ Autenticación con Azure AD (IDaaS) y mensajería asíncrona con **RabbitMQ** (E
 | `ms-clientes` | 8084 | Gestión de clientes |
 | `ms-notificaciones` | 8083 | **Consume** eventos: genera notificaciones, tickets y documentos |
 | `ms-rabbit-admin` | 8085 | Administración de colas, exchanges y bindings vía REST |
+| `ms-kafka-admin` | 8086 | Administración de tópicos y configuraciones de Kafka vía REST |
 
 Todos los microservicios validan el JWT emitido por Azure AD (filtro de Spring Security + validador de audience).
 
@@ -171,3 +172,120 @@ Los errores de validación responden `400` con el detalle por campo; recursos in
 3. En el dashboard: `notificaciones.pedido.dlq` muestra 1 mensaje.
 4. Para ver el registro de la DLQ en el log, reiniciar `ms-notificaciones` con `$env:DLQ_LISTENER_ENABLED='true'`:
    aparece `[DLQ] mensaje no entregado | colaOrigen=... motivo=...` y la DLQ queda vacía.
+
+---
+
+# Kafka (Evaluación Parcial N°3)
+
+Kafka se agrega **en paralelo** a RabbitMQ: RabbitMQ sigue manejando notificaciones, tickets y documentos de los pedidos
+(con su DLQ); Kafka se usa para streaming y analítica. Ninguna integración RabbitMQ fue modificada.
+
+## Tópicos y casos de uso
+
+| Tópico | Productor | Consumidor | Caso de uso |
+|---|---|---|---|
+| `pedidos.ventas` | `ms-pedidos` (`PedidoKafkaProducer`, al crear un pedido) | `ms-productos` (`PedidoVentaConsumer`) | Analítica de ventas: unidades e ingresos por producto, expuestos en `GET /api/analitica/ventas` |
+| `clientes.registro` | `ms-clientes` (`ClienteEventProducer`, al crear un cliente) | `ms-notificaciones` (`ClienteEventConsumer`) | Genera la notificación de bienvenida (`CLIENTE_REGISTRADO`) |
+
+La clave de cada mensaje es el id de la entidad (todos los eventos de un mismo pedido/cliente van a la misma partición).
+Si Kafka no está disponible, el pedido o el cliente igual se guarda: el fallo se registra en el log (misma política que con RabbitMQ).
+
+### Modelo de mensajes (JSON)
+
+`pedidos.ventas`:
+
+```json
+{
+  "pedidoId": 12,
+  "clienteEmail": "cliente@duocuc.cl",
+  "total": 25980.0,
+  "estado": "PENDIENTE",
+  "items": [ { "nombreProducto": "Teclado", "cantidad": 2, "precioUnitario": 12990.0 } ],
+  "ocurridoEn": "2026-11-03T21:15:00.123"
+}
+```
+
+`clientes.registro`:
+
+```json
+{
+  "clienteId": 3,
+  "nombre": "Ana Perez",
+  "email": "ana@duocuc.cl",
+  "tipo": "CLIENTE_REGISTRADO",
+  "ocurridoEn": "2026-11-03T21:15:00.123"
+}
+```
+
+Los consumidores usan `ErrorHandlingDeserializer`: un mensaje con JSON inválido se registra en el log y no bloquea el consumo.
+
+## Infraestructura (docker-compose)
+
+| Archivo | Levanta |
+|---|---|
+| `docker-compose.yml` (raíz) | Clúster RabbitMQ de 2 nodos (puertos 5672/5673, dashboard 15672/15673) |
+| `kafka/docker-compose.kafka.yml` | Zookeeper + 2 brokers Kafka (puertos 9092 y 9093) |
+| `kafka/docker-compose.kafka-ui.yml` | Kafka UI (puerto 8090) conectada a los brokers |
+
+```powershell
+cd kafka
+docker compose -f docker-compose.kafka.yml up -d
+docker compose -f docker-compose.kafka-ui.yml up -d      # después de que los brokers estén arriba
+```
+
+`KAFKA_HOST` define con qué dirección llegan los clientes externos a los brokers (por defecto `localhost`; en AWS debe ser la IP o DNS
+de la EC2). Se configura copiando `kafka/env.example` a `kafka/.env`. Kafka UI: `http://localhost:8090` (usuario/clave `pedidos360` / `pedidos360`
+por defecto, variables `KAFKA_UI_USER` / `KAFKA_UI_PASS`).
+
+## Variables de entorno adicionales
+
+| Variable | Usada por | Descripción | Valor por defecto |
+|---|---|---|---|
+| `KAFKA_BOOTSTRAP_SERVERS` | pedidos, clientes, productos, notificaciones, kafka-admin | Brokers separados por coma | `localhost:9092,localhost:9093` |
+
+## Cómo ejecutar los servicios con Kafka
+
+```powershell
+$env:KAFKA_BOOTSTRAP_SERVERS = '<IP_KAFKA>:9092,<IP_KAFKA>:9093'
+cd backend\ms-kafka-admin ; .\mvnw spring-boot:run     # puerto 8086
+```
+
+Los demás microservicios se levantan igual que antes, con la variable `KAFKA_BOOTSTRAP_SERVERS` definida.
+
+## API de ms-kafka-admin
+
+Requieren `Authorization: Bearer <JWT>` (mismo filtro y validación de audience que el resto).
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/cluster` | Brokers y controlador del clúster |
+| GET | `/api/topics` | Lista los tópicos (particiones y factor de replicación) |
+| GET | `/api/topics/{name}` | Detalle: particiones, líder, réplicas, ISR y configuraciones |
+| POST | `/api/topics` | Crea un tópico (con configuraciones opcionales) |
+| PUT | `/api/topics/{name}` | Modifica: aumenta particiones y/o cambia configuraciones |
+| DELETE | `/api/topics/{name}` | Elimina un tópico |
+| GET | `/api/topics/{name}/configs` | Lista las configuraciones del tópico |
+| PUT | `/api/topics/{name}/configs` | Cambia o restablece configuraciones |
+
+```json
+POST /api/topics
+{ "name": "demo.topic", "partitions": 2, "replicationFactor": 2, "configs": { "retention.ms": "86400000" } }
+
+PUT /api/topics/demo.topic
+{ "partitions": 4, "configs": { "retention.ms": "3600000" }, "resetConfigs": ["cleanup.policy"] }
+
+PUT /api/topics/demo.topic/configs
+{ "configs": { "retention.ms": "7200000" }, "resetConfigs": [] }
+```
+
+Validaciones: nombre obligatorio (letras, números, `.`, `_`, `-`), `partitions` y `replicationFactor` >= 1 y solo se pueden **aumentar** particiones
+(Kafka no permite reducirlas). Respuestas: `400` datos inválidos, `404` tópico inexistente, `409` tópico ya existe, `502` Kafka no disponible.
+Los tópicos internos (`__consumer_offsets`, etc.) no se pueden eliminar.
+
+## Cómo probar el flujo Kafka
+
+1. Con Kafka y los servicios levantados, crear un pedido desde el frontend (o `POST /api/pedidos`).
+2. Log de `ms-pedidos`: `Evento Kafka publicado topic=pedidos.ventas ...`.
+3. Log de `ms-productos`: `Venta procesada pedidoId=...`; `GET /api/analitica/ventas` muestra el ranking de productos.
+4. Crear un cliente (`POST /api/clientes`): log de `ms-notificaciones` `Notificacion de bienvenida generada ...` y la notificación aparece en `GET /api/notificaciones`.
+5. En Kafka UI (`http://localhost:8090`) → Topics → `pedidos.ventas` → Messages: se ve el JSON publicado y los offsets por partición.

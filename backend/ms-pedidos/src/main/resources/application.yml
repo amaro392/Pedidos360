@@ -1,4 +1,14 @@
 spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      acks: all
+      properties:
+        # Si Kafka no esta disponible, no bloquear la operacion de negocio (por defecto espera 60 s)
+        max.block.ms: 3000
+        spring.json.add.type.headers: false
   rabbitmq:
     addresses: ${RABBITMQ_ADDRESSES:localhost:5672}
     username: ${RABBITMQ_USER:guest}
@@ -11,3 +21,7 @@ app:
     routing-keys:
       pedido-creado: pedido.creado
       pedido-cancelado: pedido.cancelado
+  kafka:
+    topics:
+      pedidos-ventas: pedidos.ventas
+

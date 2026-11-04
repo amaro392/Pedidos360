@@ -1,0 +1,19 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    consumer:
+      group-id: productos-analitica
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        # Un mensaje con JSON invalido no debe bloquear al consumidor
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        spring.json.value.default.type: cl.duoc.pedidos360.events.PedidoVentaEvent
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: cl.duoc.pedidos360.events
+
+app:
+  kafka:
+    topics:
+      pedidos-ventas: pedidos.ventas

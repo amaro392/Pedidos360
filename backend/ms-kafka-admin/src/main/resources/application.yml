@@ -1,0 +1,12 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    admin:
+      properties:
+        # Si Kafka no responde, la API contesta 502 en pocos segundos en vez de quedarse colgada
+        request.timeout.ms: 5000
+        default.api.timeout.ms: 8000
+
+app:
+  kafka:
+    admin-timeout-seconds: 10
