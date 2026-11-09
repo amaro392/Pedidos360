@@ -1,5 +1,13 @@
 package cl.duoc.pedidos360.mskafkaadmin.service;
 
+import org.apache.kafka.clients.admin.ConsumerGroupDescription;
+import org.apache.kafka.clients.admin.ConsumerGroupListing;
+import org.apache.kafka.clients.admin.ListOffsetsResult;
+import org.apache.kafka.clients.admin.MemberDescription;
+import org.apache.kafka.clients.admin.OffsetSpec;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
+import java.util.HashMap;
 import cl.duoc.pedidos360.mskafkaadmin.dto.ConfigUpdateRequest;
 import cl.duoc.pedidos360.mskafkaadmin.dto.TopicRequest;
 import cl.duoc.pedidos360.mskafkaadmin.dto.TopicUpdateRequest;
@@ -38,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
+
 
 /**
  * Administracion de Kafka: cluster, topicos y sus configuraciones.
@@ -242,5 +251,64 @@ public class KafkaAdminService {
             return new IllegalArgumentException(causa.getMessage());
         }
         return new KafkaAdminException("Error comunicando con Kafka: " + causa.getMessage(), causa);
+    }
+
+    //metodos para kafka-admin, 
+
+        public List<Map<String, Object>> listarGrupos() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (ConsumerGroupListing g : esperar(admin.listConsumerGroups().all())) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("groupId", g.groupId());
+            m.put("estado", g.state().map(Object::toString).orElse("UNKNOWN"));
+            out.add(m);
+        }
+        return out;
+    }
+
+    public Map<String, Object> describirGrupo(String id) {
+        ConsumerGroupDescription g = esperar(admin.describeConsumerGroups(List.of(id)).all()).get(id);
+        if (g == null || "DEAD".equalsIgnoreCase(String.valueOf(g.state()))) {
+            throw new NoSuchElementException("El consumer group '" + id + "' no existe");
+        }
+        List<Map<String, Object>> miembros = new ArrayList<>();
+        for (MemberDescription md : g.members()) {
+            Map<String, Object> mm = new LinkedHashMap<>();
+            mm.put("clientId", md.clientId());
+            mm.put("host", md.host());
+            mm.put("particiones", md.assignment().topicPartitions().stream()
+                    .map(TopicPartition::toString).sorted().toList());
+            miembros.add(mm);
+        }
+        Map<TopicPartition, OffsetAndMetadata> committed =
+                esperar(admin.listConsumerGroupOffsets(id).partitionsToOffsetAndMetadata());
+        Map<TopicPartition, OffsetSpec> latest = new HashMap<>();
+        committed.keySet().forEach(tp -> latest.put(tp, OffsetSpec.latest()));
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> fin =
+                latest.isEmpty() ? Map.of() : esperar(admin.listOffsets(latest).all());
+        List<Map<String, Object>> offsets = new ArrayList<>();
+        long lagTotal = 0;
+        for (Map.Entry<TopicPartition, OffsetAndMetadata> e : committed.entrySet()) {
+            long end = fin.get(e.getKey()).offset();
+            long lag = Math.max(0, end - e.getValue().offset());
+            lagTotal += lag;
+            Map<String, Object> x = new LinkedHashMap<>();
+            x.put("particion", e.getKey().toString());
+            x.put("offsetActual", e.getValue().offset());
+            x.put("offsetFinal", end);
+            x.put("lag", lag);
+            offsets.add(x);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("groupId", id);
+        out.put("estado", String.valueOf(g.state()));
+        out.put("miembros", miembros);
+        out.put("lagTotal", lagTotal);
+        out.put("offsets", offsets);
+        return out;
+    }
+
+    public void eliminarGrupo(String id) {
+        esperar(admin.deleteConsumerGroups(List.of(id)).all());
     }
 }

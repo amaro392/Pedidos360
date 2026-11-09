@@ -80,4 +80,22 @@ public class KafkaAdminController {
         service.actualizarConfiguraciones(name, r);
         return Map.of("message", "Configuracion actualizada", "name", name);
     }
+
+    //metodos nuevos para kafka admin 
+
+        @GetMapping("/consumer-groups")
+    public List<Map<String, Object>> listarGrupos() {
+        return service.listarGrupos();
+    }
+
+    @GetMapping("/consumer-groups/{id}")
+    public Map<String, Object> describirGrupo(@PathVariable String id) {
+        return service.describirGrupo(id);
+    }
+
+    @DeleteMapping("/consumer-groups/{id}")
+    public ResponseEntity<Void> eliminarGrupo(@PathVariable String id) {
+        service.eliminarGrupo(id);
+        return ResponseEntity.noContent().build();
+    }
 }
