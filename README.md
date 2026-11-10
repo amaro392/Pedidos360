@@ -266,6 +266,9 @@ Requieren `Authorization: Bearer <JWT>` (mismo filtro y validación de audience 
 | DELETE | `/api/topics/{name}` | Elimina un tópico |
 | GET | `/api/topics/{name}/configs` | Lista las configuraciones del tópico |
 | PUT | `/api/topics/{name}/configs` | Cambia o restablece configuraciones |
+| GET | `/api/consumer-groups` | Lista los consumer groups |
+| GET | `/api/consumer-groups/{id}` | Detalle del grupo: estado, miembros y offsets |
+| DELETE | `/api/consumer-groups/{id}` | Elimina un grupo (debe estar sin miembros activos) |
 
 ```json
 POST /api/topics
