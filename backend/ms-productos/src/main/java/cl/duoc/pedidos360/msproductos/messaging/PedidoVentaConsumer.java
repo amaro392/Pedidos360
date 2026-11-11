@@ -18,7 +18,7 @@ public class PedidoVentaConsumer {
         this.analitica = analitica;
     }
 
-    @KafkaListener(topics = "${app.kafka.topics.pedidos-ventas}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${app.kafka.topics.pedidos-ventas}", groupId = "${spring.kafka.consumer.group-id}", concurrency = "3")
     public void onPedidoVenta(PedidoVentaEvent ev) {
         analitica.registrar(ev);
         log.info("Venta procesada pedidoId={} items={}", ev.pedidoId(), ev.items() == null ? 0 : ev.items().size());
