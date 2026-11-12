@@ -128,28 +128,28 @@ Requieren `Authorization: Bearer <JWT>`.
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/queues` | Lista colas con mensajes y consumidores |
-| POST | `/api/queues` | Crea una cola |
-| DELETE | `/api/queues/{name}` | Elimina una cola |
-| DELETE | `/api/queues/{name}/messages` | Purga los mensajes de una cola |
-| GET | `/api/exchanges` | Lista exchanges |
-| POST | `/api/exchanges` | Crea un exchange |
-| DELETE | `/api/exchanges/{name}` | Elimina un exchange |
-| GET | `/api/bindings` | Lista bindings |
-| POST | `/api/bindings` | Crea un binding |
-| DELETE | `/api/bindings` | Elimina un binding (datos en el body) |
+| GET | `/api/v1/queues` | Lista colas con mensajes y consumidores |
+| POST | `/api/v1/queues` | Crea una cola |
+| DELETE | `/api/v1/queues/{name}` | Elimina una cola |
+| DELETE | `/api/v1/queues/{name}/messages` | Purga los mensajes de una cola |
+| GET | `/api/v1/exchanges` | Lista exchanges |
+| POST | `/api/v1/exchanges` | Crea un exchange |
+| DELETE | `/api/v1/exchanges/{name}` | Elimina un exchange |
+| GET | `/api/v1/bindings` | Lista bindings |
+| POST | `/api/v1/bindings` | Crea un binding |
+| DELETE | `/api/v1/bindings` | Elimina un binding (datos en el body) |
 
 Ejemplos de body:
 
 ```json
-POST /api/queues
+POST /api/v1/queues
 { "name": "demo.queue", "durable": true, "type": "quorum",
   "deadLetterExchange": "pedidos.dlx", "deadLetterRoutingKey": "demo.dead", "messageTtlMs": 60000 }
 
-POST /api/exchanges
+POST /api/v1/exchanges
 { "name": "demo.exchange", "type": "topic", "durable": true }
 
-POST /api/bindings        (y DELETE /api/bindings con el mismo body)
+POST /api/v1/bindings        (y DELETE /api/v1/bindings con el mismo body)
 { "exchange": "demo.exchange", "queue": "demo.queue", "routingKey": "demo.key" }
 ```
 
