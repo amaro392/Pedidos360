@@ -12,9 +12,9 @@ public class KafkaTopicConfig {
     @Bean
     NewTopic clientesRegistroTopic(@Value("${app.kafka.topics.clientes-registro}") String name) {
         return TopicBuilder.name(name)
-                .partitions(2).replicas(2)
+                .partitions(3).replicas(3)
                 .config(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT)
-                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .build();
     }
 }

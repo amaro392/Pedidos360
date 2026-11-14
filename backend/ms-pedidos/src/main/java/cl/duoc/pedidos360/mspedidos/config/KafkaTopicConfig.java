@@ -13,10 +13,10 @@ public class KafkaTopicConfig {
     @Bean
     NewTopic pedidosVentasTopic(@Value("${app.kafka.topics.pedidos-ventas}") String name) {
         return TopicBuilder.name(name)
-                .partitions(3).replicas(2)
+                .partitions(3).replicas(3)
                 .config(TopicConfig.RETENTION_MS_CONFIG, "604800000")      // 7 días
                 .config(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_DELETE)
-                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .build();
     }
 }
