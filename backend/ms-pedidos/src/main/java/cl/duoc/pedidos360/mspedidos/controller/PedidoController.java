@@ -2,6 +2,7 @@ package cl.duoc.pedidos360.mspedidos.controller;
 
 import cl.duoc.pedidos360.mspedidos.entity.Pedido;
 import cl.duoc.pedidos360.mspedidos.messaging.PedidoEventPublisher;
+import cl.duoc.pedidos360.mspedidos.messaging.PedidoKafkaProducer;
 import cl.duoc.pedidos360.mspedidos.repository.PedidoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +17,13 @@ public class PedidoController {
 
     private final PedidoRepository pedidoRepository;
     private final PedidoEventPublisher publisher;
+    private final PedidoKafkaProducer kafkaProducer;
 
-    public PedidoController(PedidoRepository pedidoRepository, PedidoEventPublisher publisher) {
+    public PedidoController(PedidoRepository pedidoRepository, PedidoEventPublisher publisher,
+            PedidoKafkaProducer kafkaProducer) {
         this.pedidoRepository = pedidoRepository;
         this.publisher = publisher;
+        this.kafkaProducer = kafkaProducer;
     }
 
     @GetMapping
@@ -30,7 +34,8 @@ public class PedidoController {
     @PostMapping
     public ResponseEntity<Pedido> crear(@RequestBody Pedido pedido) {
         Pedido guardado = pedidoRepository.save(pedido);
-        publisher.publicarCreado(guardado);
+        publisher.publicarCreado(guardado);      // RabbitMQ (notificaciones, tickets, documentos)
+        kafkaProducer.publicarVenta(guardado);   // Kafka (streaming para analitica)
         return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 }

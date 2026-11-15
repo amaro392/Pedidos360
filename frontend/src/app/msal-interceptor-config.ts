@@ -7,7 +7,7 @@ export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const scopes = environment.azure.protectedResourceScopes;
 
   // API Gateway (AWS)
-  protectedResourceMap.set('https://uqzu7hn0h2.execute-api.us-east-1.amazonaws.com/prod/*', scopes);
+  protectedResourceMap.set('https://v760ns24ge.execute-api.us-east-1.amazonaws.com/prod/*', scopes);
 
   // Microservicios locales
   protectedResourceMap.set('http://localhost:8081/api/*', scopes);

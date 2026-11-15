@@ -13,19 +13,19 @@ import java.util.Map;
 /**
  * API REST de administracion de RabbitMQ.
  *
- *   GET    /api/queues                   listar colas
- *   POST   /api/queues                   crear cola
- *   DELETE /api/queues/{name}            eliminar cola
- *   DELETE /api/queues/{name}/messages   purgar mensajes de la cola
- *   GET    /api/exchanges                listar exchanges
- *   POST   /api/exchanges                crear exchange
- *   DELETE /api/exchanges/{name}         eliminar exchange
- *   GET    /api/bindings                 listar bindings
- *   POST   /api/bindings                 crear binding
- *   DELETE /api/bindings                 eliminar binding (datos en el body)
+ *   GET    /api/v1/queues                   listar colas
+ *   POST   /api/v1/queues                   crear cola
+ *   DELETE /api/v1/queues/{name}            eliminar cola
+ *   DELETE /api/v1/queues/{name}/messages   purgar mensajes de la cola
+ *   GET    /api/v1/exchanges                listar exchanges
+ *   POST   /api/v1/exchanges                crear exchange
+ *   DELETE /api/v1/exchanges/{name}         eliminar exchange
+ *   GET    /api/v1/bindings                 listar bindings
+ *   POST   /api/v1/bindings                 crear binding
+ *   DELETE /api/v1/bindings                 eliminar binding (datos en el body)
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class RabbitAdminController {
 
     private final RabbitAdminService service;
