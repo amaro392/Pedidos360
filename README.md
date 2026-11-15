@@ -224,7 +224,7 @@ Los consumidores usan `ErrorHandlingDeserializer`: un mensaje con JSON inválido
 | Archivo | Levanta |
 |---|---|
 | `docker-compose.yml` (raíz) | Clúster RabbitMQ de 2 nodos (puertos 5672/5673, dashboard 15672/15673) |
-| `kafka/docker-compose.kafka.yml` | Zookeeper + 2 brokers Kafka (puertos 9092 y 9093) |
+| `kafka/docker-compose.kafka.yml` | 3 Zookeeper (ensemble) + 3 brokers Kafka (puertos 9092, 9093 y 9094) |
 | `kafka/docker-compose.kafka-ui.yml` | Kafka UI (puerto 8090) conectada a los brokers |
 
 ```powershell
@@ -241,12 +241,12 @@ por defecto, variables `KAFKA_UI_USER` / `KAFKA_UI_PASS`).
 
 | Variable | Usada por | Descripción | Valor por defecto |
 |---|---|---|---|
-| `KAFKA_BOOTSTRAP_SERVERS` | pedidos, clientes, productos, notificaciones, kafka-admin | Brokers separados por coma | `localhost:9092,localhost:9093` |
+| `KAFKA_BOOTSTRAP_SERVERS` | pedidos, clientes, productos, notificaciones, kafka-admin | Brokers separados por coma | `localhost:9092,localhost:9093,localhost:9094` |
 
 ## Cómo ejecutar los servicios con Kafka
 
 ```powershell
-$env:KAFKA_BOOTSTRAP_SERVERS = '<IP_KAFKA>:9092,<IP_KAFKA>:9093'
+$env:KAFKA_BOOTSTRAP_SERVERS = '<IP_KAFKA>:9092,<IP_KAFKA>:9093,<IP_KAFKA>:9094'
 cd backend\ms-kafka-admin ; .\mvnw spring-boot:run     # puerto 8086
 ```
 
