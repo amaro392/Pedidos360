@@ -1,0 +1,577 @@
+diff --git a/README.md b/README.md
+--- a/README.md	2026-11-15 19:33:45.855286433 +0000
++++ b/README.md	2026-11-15 19:34:09.547728789 +0000
+@@ -224,7 +224,7 @@
+ | Archivo | Levanta |
+ |---|---|
+ | `docker-compose.yml` (raíz) | Clúster RabbitMQ de 2 nodos (puertos 5672/5673, dashboard 15672/15673) |
+-| `kafka/docker-compose.kafka.yml` | Zookeeper + 2 brokers Kafka (puertos 9092 y 9093) |
++| `kafka/docker-compose.kafka.yml` | 3 Zookeeper (ensemble) + 3 brokers Kafka (puertos 9092, 9093 y 9094) |
+ | `kafka/docker-compose.kafka-ui.yml` | Kafka UI (puerto 8090) conectada a los brokers |
+ 
+ ```powershell
+@@ -241,7 +241,7 @@
+ 
+ | Variable | Usada por | Descripción | Valor por defecto |
+ |---|---|---|---|
+-| `KAFKA_BOOTSTRAP_SERVERS` | pedidos, clientes, productos, notificaciones, kafka-admin | Brokers separados por coma | `localhost:9092,localhost:9093` |
++| `KAFKA_BOOTSTRAP_SERVERS` | pedidos, clientes, productos, notificaciones, kafka-admin | Brokers separados por coma | `localhost:9092,localhost:9093,localhost:9094` |
+ 
+ ## Cómo ejecutar los servicios con Kafka
+ 
+diff --git a/backend/ms-clientes/src/main/resources/application.properties b/backend/ms-clientes/src/main/resources/application.properties
+--- a/backend/ms-clientes/src/main/resources/application.properties	2026-11-15 19:33:45.857491983 +0000
++++ b/backend/ms-clientes/src/main/resources/application.properties	2026-11-15 19:34:09.548762271 +0000
+@@ -1,34 +1,34 @@
+-==========================================
+-Configuración del Microservicio Clientes
+-==========================================
++#==========================================
++# Configuración del Microservicio Clientes
++#==========================================
+ spring.application.name=ms-clientes
+ server.port=8084
+ 
+-==========================================
+-Conexión a MySQL (EC2)
+-==========================================
++#==========================================
++# Conexión a MySQL (EC2)
++#==========================================
+ spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/clientes_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ spring.datasource.username=appuser
+ spring.datasource.password=${DB_PASSWORD}
+ 
+-==========================================
+-Configuración Hibernate / JPA
+-==========================================
++#==========================================
++# Configuración Hibernate / JPA
++#==========================================
+ spring.jpa.hibernate.ddl-auto=update
+ spring.jpa.show-sql=true
+ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+ 
+-==========================================
+-Azure AD JWT / Seguridad
+-==========================================
++#==========================================
++# Azure AD JWT / Seguridad
++#==========================================
+ azure.ad.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ azure.ad.issuer=https://sts.windows.net/abf8edad-bd14-425d-9255-2e0e7e57dfa2/
+ azure.ad.audience=api://9078dcc3-9503-4237-a463-d5a4a96cb61f
+ spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ 
+-==========================================
+-Inicialización de SQL
+-==========================================
++#==========================================
++# Inicialización de SQL
++#==========================================
+ spring.jpa.defer-datasource-initialization=true
+ spring.sql.init.mode=never
+\ No newline at end of file
+diff --git a/backend/ms-clientes/src/main/resources/application.yml b/backend/ms-clientes/src/main/resources/application.yml
+--- a/backend/ms-clientes/src/main/resources/application.yml	2026-11-15 19:33:45.857560074 +0000
++++ b/backend/ms-clientes/src/main/resources/application.yml	2026-11-15 19:34:09.546563243 +0000
+@@ -1,6 +1,6 @@
+ spring:
+   kafka:
+-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
++    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+     producer:
+       key-serializer: org.apache.kafka.common.serialization.StringSerializer
+       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+diff --git a/backend/ms-kafka-admin/src/main/resources/application.yml b/backend/ms-kafka-admin/src/main/resources/application.yml
+--- a/backend/ms-kafka-admin/src/main/resources/application.yml	2026-11-15 19:33:45.860201312 +0000
++++ b/backend/ms-kafka-admin/src/main/resources/application.yml	2026-11-15 19:34:09.547481194 +0000
+@@ -1,6 +1,6 @@
+ spring:
+   kafka:
+-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
++    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+     admin:
+       properties:
+         # Si Kafka no responde, la API contesta 502 en pocos segundos en vez de quedarse colgada
+diff --git a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/config/KafkaErrorHandlerConfig.java b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/config/KafkaErrorHandlerConfig.java
+--- a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/config/KafkaErrorHandlerConfig.java	2026-11-15 19:33:45.861343849 +0000
++++ b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/config/KafkaErrorHandlerConfig.java	2026-11-15 19:34:20.179093195 +0000
+@@ -1,22 +1,61 @@
+ package cl.duoc.pedidos360.ms_notificaciones.config;
++
++import org.apache.kafka.clients.admin.NewTopic;
++import org.apache.kafka.clients.producer.ProducerConfig;
++import org.apache.kafka.common.serialization.ByteArraySerializer;
++import org.apache.kafka.common.serialization.StringSerializer;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
++import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
++import org.springframework.kafka.config.TopicBuilder;
++import org.springframework.kafka.core.DefaultKafkaProducerFactory;
++import org.springframework.kafka.core.KafkaOperations;
++import org.springframework.kafka.core.KafkaTemplate;
++import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+ import org.springframework.kafka.listener.DefaultErrorHandler;
++import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+ import org.springframework.util.backoff.FixedBackOff;
+ 
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++/**
++ * Manejo de errores del consumidor Kafka: 3 reintentos (1 s) y, si sigue fallando (o el payload es invalido),
++ * el evento se publica en el topico "<topico>.DLT" y se registra en el log. Asi un mensaje defectuoso
++ * no bloquea la particion ni se pierde.
++ */
+ @Configuration
+ public class KafkaErrorHandlerConfig {
+     private static final Logger log = LoggerFactory.getLogger(KafkaErrorHandlerConfig.class);
+ 
++    /** Topico de mensajes muertos: mismas particiones que el original (el recoverer conserva la particion). */
++    @Bean
++    NewTopic clientesRegistroDltTopic(@Value("${app.kafka.topics.clientes-registro}") String name) {
++        return TopicBuilder.name(name + ".DLT").partitions(3).replicas(3).build();
++    }
++
+     @Bean
+-    DefaultErrorHandler kafkaErrorHandler() {
+-        DefaultErrorHandler h = new DefaultErrorHandler(
+-            (record, ex) -> log.error("Evento descartado tras reintentos topic={} particion={} offset={} causa={}",
+-                    record.topic(), record.partition(), record.offset(), ex.getMessage()),
+-            new FixedBackOff(1000L, 3L));
++    DefaultErrorHandler kafkaErrorHandler(@Value("${spring.kafka.bootstrap-servers}") String bootstrap) {
++        // byte[] = payloads que no se pudieron deserializar; Object = eventos validos que fallaron al procesarse
++        Map<String, Object> base = Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
++        KafkaTemplate<Object, Object> bytes = new KafkaTemplate<>(
++                new DefaultKafkaProducerFactory<>(base, new ByteArraySerializer(), new ByteArraySerializer()));
++        KafkaTemplate<Object, Object> json = new KafkaTemplate<>(
++                new DefaultKafkaProducerFactory<>(base, new StringSerializer(), new JacksonJsonSerializer<>()));
++        // LinkedHashMap: el orden importa (lo mas especifico primero)
++        Map<Class<?>, KafkaOperations<?, ?>> templates = new LinkedHashMap<>();
++        templates.put(byte[].class, bytes);
++        templates.put(Object.class, json);
++        DeadLetterPublishingRecoverer dlt = new DeadLetterPublishingRecoverer(templates);
++
++        DefaultErrorHandler h = new DefaultErrorHandler((record, ex) -> {
++            log.error("Evento enviado a DLT topic={} particion={} offset={} causa={}",
++                    record.topic(), record.partition(), record.offset(), ex.getMessage());
++            dlt.accept(record, ex);
++        }, new FixedBackOff(1000L, 3L));
+         h.addNotRetryableExceptions(IllegalArgumentException.class);
+         return h;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumer.java b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumer.java
+--- a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumer.java	2026-11-15 19:33:45.861785727 +0000
++++ b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumer.java	2026-11-15 19:34:09.549833210 +0000
+@@ -1,7 +1,6 @@
+ package cl.duoc.pedidos360.ms_notificaciones.messaging.cliente;
+ 
+ import cl.duoc.pedidos360.events.ClienteEvent;
+-import cl.duoc.pedidos360.ms_notificaciones.entity.Notificacion;
+ import cl.duoc.pedidos360.ms_notificaciones.service.NotificacionService;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -9,7 +8,8 @@
+ import org.springframework.stereotype.Component;
+ 
+ /**
+- * Consumidor Kafka del topico "clientes.registro": genera la notificacion de bienvenida.
++ * Consumidor Kafka del topico "clientes.registro": solo valida el payload y delega en el servicio.
++ * La logica de dominio (armar la notificacion) vive en NotificacionService.
+  * Es independiente de los consumidores RabbitMQ (pedidos, tickets, documentos).
+  */
+ @Component
+@@ -22,18 +22,13 @@
+         this.service = service;
+     }
+ 
+-    @KafkaListener(topics = "${app.kafka.topics.clientes-registro}", groupId = "${spring.kafka.consumer.group-id}")
++    // concurrency = 3: un hilo por particion del topico (3 particiones)
++    @KafkaListener(topics = "${app.kafka.topics.clientes-registro}", groupId = "${spring.kafka.consumer.group-id}", concurrency = "3")
+     public void onClienteRegistrado(ClienteEvent ev) {
+         if (ev.email() == null || ev.email().isBlank()) {
+             throw new IllegalArgumentException("email vacio en evento de cliente");
+         }
+-        String nombre = (ev.nombre() == null || ev.nombre().isBlank()) ? "cliente" : ev.nombre();
+-        Notificacion n = new Notificacion();
+-        n.setDestinatarioEmail(ev.email());
+-        n.setTipo("CLIENTE_REGISTRADO");
+-        n.setAsunto("Bienvenido a Pedidos360");
+-        n.setMensaje("Hola " + nombre + ", tu cuenta fue registrada correctamente en Pedidos360.");
+-        service.enviar(n);
++        service.registrarBienvenida(ev);
+         log.info("Notificacion de bienvenida generada clienteId={} email={}", ev.clienteId(), ev.email());
+     }
+ }
+diff --git a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionService.java b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionService.java
+--- a/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionService.java	2026-11-15 19:33:45.862859357 +0000
++++ b/backend/ms-notificaciones/src/main/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionService.java	2026-11-15 19:34:09.549711627 +0000
+@@ -1,5 +1,6 @@
+ package cl.duoc.pedidos360.ms_notificaciones.service;
+ 
++import cl.duoc.pedidos360.events.ClienteEvent;
+ import cl.duoc.pedidos360.ms_notificaciones.entity.Notificacion;
+ import cl.duoc.pedidos360.ms_notificaciones.repository.NotificacionRepository;
+ import org.springframework.beans.factory.annotation.Autowired;
+@@ -38,6 +39,17 @@
+         return repository.save(notificacion);
+     }
+ 
++    /** Genera la notificacion de bienvenida para un cliente recien registrado (evento Kafka clientes.registro). */
++    public Notificacion registrarBienvenida(ClienteEvent ev) {
++        String nombre = (ev.nombre() == null || ev.nombre().isBlank()) ? "cliente" : ev.nombre();
++        Notificacion n = new Notificacion();
++        n.setDestinatarioEmail(ev.email());
++        n.setTipo("CLIENTE_REGISTRADO");
++        n.setAsunto("Bienvenido a Pedidos360");
++        n.setMensaje("Hola " + nombre + ", tu cuenta fue registrada correctamente en Pedidos360.");
++        return enviar(n);
++    }
++
+     public void eliminar(Long id) {
+         repository.deleteById(id);
+     }
+diff --git a/backend/ms-notificaciones/src/main/resources/application.properties b/backend/ms-notificaciones/src/main/resources/application.properties
+--- a/backend/ms-notificaciones/src/main/resources/application.properties	2026-11-15 19:33:45.862915843 +0000
++++ b/backend/ms-notificaciones/src/main/resources/application.properties	2026-11-15 19:34:09.549289189 +0000
+@@ -1,35 +1,35 @@
+-==========================================
+-Configuración del Microservicio Notificaciones
+-==========================================
++#==========================================
++# Configuración del Microservicio Notificaciones
++#==========================================
+ spring.application.name=ms-notificaciones
+ server.port=8083
+ 
+-==========================================
+-Conexión a MySQL (EC2)
+-==========================================
++#==========================================
++# Conexión a MySQL (EC2)
++#==========================================
+ spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/notificaciones_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ spring.datasource.username=appuser
+ spring.datasource.password=${DB_PASSWORD}
+ 
+-==========================================
+-Configuración Hibernate / JPA
+-==========================================
++#==========================================
++# Configuración Hibernate / JPA
++#==========================================
+ spring.jpa.hibernate.ddl-auto=update
+ spring.jpa.show-sql=true
+ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+ 
+-==========================================
+-Azure AD JWT / Seguridad
+-==========================================
++#==========================================
++# Azure AD JWT / Seguridad
++#==========================================
+ azure.ad.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ azure.ad.issuer=https://sts.windows.net/abf8edad-bd14-425d-9255-2e0e7e57dfa2/
+ azure.ad.audience=api://9078dcc3-9503-4237-a463-d5a4a96cb61f
+ spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ 
+-==========================================
+-Inicialización de SQL
+-==========================================
++#==========================================
++# Inicialización de SQL
++#==========================================
+ spring.jpa.defer-datasource-initialization=true
+ spring.sql.init.mode=never
+ # Evita conexiones muertas en el pool (la EC2 cierra las inactivas)
+diff --git a/backend/ms-notificaciones/src/main/resources/application.yml b/backend/ms-notificaciones/src/main/resources/application.yml
+--- a/backend/ms-notificaciones/src/main/resources/application.yml	2026-11-15 19:33:45.863096481 +0000
++++ b/backend/ms-notificaciones/src/main/resources/application.yml	2026-11-15 19:34:09.547138811 +0000
+@@ -1,6 +1,6 @@
+ spring:
+   kafka:
+-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
++    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+     consumer:
+       group-id: notificaciones-clientes
+       auto-offset-reset: earliest
+diff --git a/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumerTest.java b/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumerTest.java
+--- a/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumerTest.java	2026-11-15 19:33:45.863287005 +0000
++++ b/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/messaging/cliente/ClienteEventConsumerTest.java	2026-11-15 19:34:09.549957432 +0000
+@@ -1,12 +1,9 @@
+ package cl.duoc.pedidos360.ms_notificaciones.messaging.cliente;
+ 
+ import cl.duoc.pedidos360.events.ClienteEvent;
+-import cl.duoc.pedidos360.ms_notificaciones.entity.Notificacion;
+ import cl.duoc.pedidos360.ms_notificaciones.service.NotificacionService;
+ import org.junit.jupiter.api.Test;
+-import org.mockito.ArgumentCaptor;
+ 
+-import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.junit.jupiter.api.Assertions.assertThrows;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.Mockito.*;
+@@ -17,19 +14,18 @@
+     private final ClienteEventConsumer consumer = new ClienteEventConsumer(service);
+ 
+     @Test
+-    void clienteRegistrado_genera_notificacion_de_bienvenida() {
+-        consumer.onClienteRegistrado(new ClienteEvent(1L, "Ana", "ana@duocuc.cl", "CLIENTE_REGISTRADO", "x"));
++    void clienteRegistrado_delega_en_el_servicio() {
++        ClienteEvent ev = new ClienteEvent(1L, "Ana", "ana@duocuc.cl", "CLIENTE_REGISTRADO", "x");
+ 
+-        ArgumentCaptor<Notificacion> captor = ArgumentCaptor.forClass(Notificacion.class);
+-        verify(service).enviar(captor.capture());
+-        assertEquals("ana@duocuc.cl", captor.getValue().getDestinatarioEmail());
+-        assertEquals("CLIENTE_REGISTRADO", captor.getValue().getTipo());
++        consumer.onClienteRegistrado(ev);
++
++        verify(service).registrarBienvenida(ev);
+     }
+ 
+     @Test
+     void emailVacio_lanza_excepcion_y_no_guarda() {
+         assertThrows(IllegalArgumentException.class,
+                 () -> consumer.onClienteRegistrado(new ClienteEvent(1L, "Ana", " ", "CLIENTE_REGISTRADO", "x")));
+-        verify(service, never()).enviar(any(Notificacion.class));
++        verify(service, never()).registrarBienvenida(any(ClienteEvent.class));
+     }
+ }
+diff --git a/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionServiceTest.java b/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionServiceTest.java
+--- a/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionServiceTest.java	2026-11-15 19:33:45.863538212 +0000
++++ b/backend/ms-notificaciones/src/test/java/cl/duoc/pedidos360/ms_notificaciones/service/NotificacionServiceTest.java	2026-11-15 19:34:09.550232979 +0000
+@@ -1,5 +1,6 @@
+ package cl.duoc.pedidos360.ms_notificaciones.service;
+ 
++import cl.duoc.pedidos360.events.ClienteEvent;
+ import cl.duoc.pedidos360.ms_notificaciones.entity.Notificacion;
+ import cl.duoc.pedidos360.ms_notificaciones.repository.NotificacionRepository;
+ import org.junit.jupiter.api.Test;
+@@ -40,6 +41,17 @@
+     }
+ 
+     @Test
++    void registrarBienvenida_armaNotificacionDeCliente() {
++        when(repository.save(org.mockito.ArgumentMatchers.any(Notificacion.class))).thenAnswer(i -> i.getArgument(0));
++
++        Notificacion r = service.registrarBienvenida(new ClienteEvent(1L, "Ana", "ana@duocuc.cl", "CLIENTE_REGISTRADO", "x"));
++
++        assertEquals("ana@duocuc.cl", r.getDestinatarioEmail());
++        assertEquals("CLIENTE_REGISTRADO", r.getTipo());
++        assertEquals("ENVIADA", r.getEstado());
++    }
++
++    @Test
+     void buscarPorId_retornaNullSiNoExiste() {
+         when(repository.findById(99L)).thenReturn(Optional.empty());
+ 
+diff --git a/backend/ms-pedidos/src/main/resources/application.properties b/backend/ms-pedidos/src/main/resources/application.properties
+--- a/backend/ms-pedidos/src/main/resources/application.properties	2026-11-15 19:33:45.865615462 +0000
++++ b/backend/ms-pedidos/src/main/resources/application.properties	2026-11-15 19:34:09.548936495 +0000
+@@ -1,35 +1,35 @@
+-==========================================
+-Configuración del Microservicio Pedidos
+-==========================================
++#==========================================
++# Configuración del Microservicio Pedidos
++#==========================================
+ spring.application.name=ms-pedidos
+ server.port=8081
+ 
+-==========================================
+-Conexión a MySQL (EC2)
+-==========================================
++#==========================================
++# Conexión a MySQL (EC2)
++#==========================================
+ spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/pedidos_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ spring.datasource.username=appuser
+ spring.datasource.password=${DB_PASSWORD}
+ 
+-==========================================
+-Configuración Hibernate / JPA
+-==========================================
++#==========================================
++# Configuración Hibernate / JPA
++#==========================================
+ spring.jpa.hibernate.ddl-auto=update
+ spring.jpa.show-sql=true
+ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+ 
+-==========================================
+-Azure AD JWT / Seguridad
+-==========================================
++#==========================================
++# Azure AD JWT / Seguridad
++#==========================================
+ azure.ad.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ azure.ad.issuer=https://sts.windows.net/abf8edad-bd14-425d-9255-2e0e7e57dfa2/
+ azure.ad.audience=api://9078dcc3-9503-4237-a463-d5a4a96cb61f
+ spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ 
+-==========================================
+-Inicialización de SQL
+-==========================================
++#==========================================
++# Inicialización de SQL
++#==========================================
+ spring.jpa.defer-datasource-initialization=true
+ spring.sql.init.mode=never
+ # Evita conexiones muertas en el pool (la EC2 cierra las inactivas)
+diff --git a/backend/ms-pedidos/src/main/resources/application.yml b/backend/ms-pedidos/src/main/resources/application.yml
+--- a/backend/ms-pedidos/src/main/resources/application.yml	2026-11-15 19:33:45.865675217 +0000
++++ b/backend/ms-pedidos/src/main/resources/application.yml	2026-11-15 19:34:09.546766334 +0000
+@@ -1,6 +1,6 @@
+ spring:
+   kafka:
+-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
++    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+     producer:
+       key-serializer: org.apache.kafka.common.serialization.StringSerializer
+       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+diff --git a/backend/ms-productos/src/main/java/cl/duoc/pedidos360/msproductos/config/KafkaErrorHandlerConfig.java b/backend/ms-productos/src/main/java/cl/duoc/pedidos360/msproductos/config/KafkaErrorHandlerConfig.java
+--- a/backend/ms-productos/src/main/java/cl/duoc/pedidos360/msproductos/config/KafkaErrorHandlerConfig.java	2026-11-15 19:33:45.867546050 +0000
++++ b/backend/ms-productos/src/main/java/cl/duoc/pedidos360/msproductos/config/KafkaErrorHandlerConfig.java	2026-11-15 19:34:20.178729324 +0000
+@@ -1,22 +1,61 @@
+ package cl.duoc.pedidos360.msproductos.config;
++
++import org.apache.kafka.clients.admin.NewTopic;
++import org.apache.kafka.clients.producer.ProducerConfig;
++import org.apache.kafka.common.serialization.ByteArraySerializer;
++import org.apache.kafka.common.serialization.StringSerializer;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
++import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
++import org.springframework.kafka.config.TopicBuilder;
++import org.springframework.kafka.core.DefaultKafkaProducerFactory;
++import org.springframework.kafka.core.KafkaOperations;
++import org.springframework.kafka.core.KafkaTemplate;
++import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+ import org.springframework.kafka.listener.DefaultErrorHandler;
++import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+ import org.springframework.util.backoff.FixedBackOff;
+ 
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++/**
++ * Manejo de errores del consumidor Kafka: 3 reintentos (1 s) y, si sigue fallando (o el payload es invalido),
++ * el evento se publica en el topico "<topico>.DLT" y se registra en el log. Asi un mensaje defectuoso
++ * no bloquea la particion ni se pierde.
++ */
+ @Configuration
+ public class KafkaErrorHandlerConfig {
+     private static final Logger log = LoggerFactory.getLogger(KafkaErrorHandlerConfig.class);
+ 
++    /** Topico de mensajes muertos: mismas particiones que el original (el recoverer conserva la particion). */
++    @Bean
++    NewTopic pedidosVentasDltTopic(@Value("${app.kafka.topics.pedidos-ventas}") String name) {
++        return TopicBuilder.name(name + ".DLT").partitions(3).replicas(3).build();
++    }
++
+     @Bean
+-    DefaultErrorHandler kafkaErrorHandler() {
+-        DefaultErrorHandler h = new DefaultErrorHandler(
+-            (record, ex) -> log.error("Evento descartado tras reintentos topic={} particion={} offset={} causa={}",
+-                    record.topic(), record.partition(), record.offset(), ex.getMessage()),
+-            new FixedBackOff(1000L, 3L));
++    DefaultErrorHandler kafkaErrorHandler(@Value("${spring.kafka.bootstrap-servers}") String bootstrap) {
++        // byte[] = payloads que no se pudieron deserializar; Object = eventos validos que fallaron al procesarse
++        Map<String, Object> base = Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
++        KafkaTemplate<Object, Object> bytes = new KafkaTemplate<>(
++                new DefaultKafkaProducerFactory<>(base, new ByteArraySerializer(), new ByteArraySerializer()));
++        KafkaTemplate<Object, Object> json = new KafkaTemplate<>(
++                new DefaultKafkaProducerFactory<>(base, new StringSerializer(), new JacksonJsonSerializer<>()));
++        // LinkedHashMap: el orden importa (lo mas especifico primero)
++        Map<Class<?>, KafkaOperations<?, ?>> templates = new LinkedHashMap<>();
++        templates.put(byte[].class, bytes);
++        templates.put(Object.class, json);
++        DeadLetterPublishingRecoverer dlt = new DeadLetterPublishingRecoverer(templates);
++
++        DefaultErrorHandler h = new DefaultErrorHandler((record, ex) -> {
++            log.error("Evento enviado a DLT topic={} particion={} offset={} causa={}",
++                    record.topic(), record.partition(), record.offset(), ex.getMessage());
++            dlt.accept(record, ex);
++        }, new FixedBackOff(1000L, 3L));
+         h.addNotRetryableExceptions(IllegalArgumentException.class);
+         return h;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/backend/ms-productos/src/main/resources/application.properties b/backend/ms-productos/src/main/resources/application.properties
+--- a/backend/ms-productos/src/main/resources/application.properties	2026-11-15 19:33:45.868370123 +0000
++++ b/backend/ms-productos/src/main/resources/application.properties	2026-11-15 19:34:09.549131472 +0000
+@@ -1,34 +1,34 @@
+-==========================================
+-Configuración del Microservicio Productos
+-==========================================
++#==========================================
++# Configuración del Microservicio Productos
++#==========================================
+ spring.application.name=ms-productos
+ server.port=8082
+ 
+-==========================================
+-Conexión a MySQL (EC2)
+-==========================================
++#==========================================
++# Conexión a MySQL (EC2)
++#==========================================
+ spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/productos_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ spring.datasource.username=appuser
+ spring.datasource.password=${DB_PASSWORD}
+ 
+-==========================================
+-Configuración Hibernate / JPA
+-==========================================
++#==========================================
++# Configuración Hibernate / JPA
++#==========================================
+ spring.jpa.hibernate.ddl-auto=update
+ spring.jpa.show-sql=true
+ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+ 
+-==========================================
+-Azure AD JWT / Seguridad
+-==========================================
++#==========================================
++# Azure AD JWT / Seguridad
++#==========================================
+ azure.ad.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ azure.ad.issuer=https://sts.windows.net/abf8edad-bd14-425d-9255-2e0e7e57dfa2/
+ azure.ad.audience=api://9078dcc3-9503-4237-a463-d5a4a96cb61f
+ spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://login.microsoftonline.com/abf8edad-bd14-425d-9255-2e0e7e57dfa2/discovery/v2.0/keys
+ 
+-==========================================
+-Inicialización de SQL
+-==========================================
++#==========================================
++# Inicialización de SQL
++#==========================================
+ spring.jpa.defer-datasource-initialization=true
+ spring.sql.init.mode=always
+\ No newline at end of file
+diff --git a/backend/ms-productos/src/main/resources/application.yml b/backend/ms-productos/src/main/resources/application.yml
+--- a/backend/ms-productos/src/main/resources/application.yml	2026-11-15 19:33:45.868438375 +0000
++++ b/backend/ms-productos/src/main/resources/application.yml	2026-11-15 19:34:09.546916015 +0000
+@@ -1,6 +1,6 @@
+ spring:
+   kafka:
+-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
++    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+     consumer:
+       group-id: productos-analitica
+       auto-offset-reset: earliest
